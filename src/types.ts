@@ -36,3 +36,13 @@ export interface User {
   email: string
   name: string
 }
+
+export interface MeetingNote {
+  _id: Id<"meetingNotes">
+  _creationTime: number
+  title: string
+  content: string
+  date: string
+  tags?: string[]
+  userId: Id<"users">
+}

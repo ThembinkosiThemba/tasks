@@ -14,6 +14,7 @@ import {
   Plus,
   CheckSquare,
   FolderKanban,
+  FileText,
 } from "lucide-react";
 import type { Project, Task } from "@/types";
 
@@ -26,6 +27,7 @@ interface CommandPaletteProps {
   onAddTask: () => void;
   onAddProject: () => void;
   onAddSchedule: () => void;
+  onAddNote: () => void;
   onSelectTask: (task: Task) => void;
 }
 
@@ -38,6 +40,7 @@ export function CommandPalette({
   onAddTask,
   onAddProject,
   onAddSchedule,
+  onAddNote,
   onSelectTask,
 }: CommandPaletteProps) {
   const [search, setSearch] = useState("");
@@ -98,6 +101,11 @@ export function CommandPalette({
             <span>Schedule Task</span>
             <span className="ml-auto text-xs text-muted-foreground">⌘S</span>
           </CommandItem>
+          <CommandItem onSelect={() => runCommand(onAddNote)}>
+            <FileText className="mr-2 h-4 w-4" />
+            <span>New Meeting Note</span>
+            <span className="ml-auto text-xs text-muted-foreground">⌘M</span>
+          </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
@@ -112,6 +120,11 @@ export function CommandPalette({
             <Calendar className="mr-2 h-4 w-4" />
             <span>Daily Schedule</span>
             <span className="ml-auto text-xs text-muted-foreground">⌘2</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => onNavigate("notes"))}>
+            <FileText className="mr-2 h-4 w-4" />
+            <span>Meeting Notes</span>
+            <span className="ml-auto text-xs text-muted-foreground">⌘3</span>
           </CommandItem>
         </CommandGroup>
 

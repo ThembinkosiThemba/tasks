@@ -109,7 +109,7 @@ export function TaskDialog({
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="">
                   <SelectItem value="todo">To Do</SelectItem>
                   <SelectItem value="in-progress">In Progress</SelectItem>
                   <SelectItem value="done">Done</SelectItem>
@@ -126,7 +126,7 @@ export function TaskDialog({
                 <SelectTrigger id="priority">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="">
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
@@ -141,7 +141,7 @@ export function TaskDialog({
               <SelectTrigger id="project">
                 <SelectValue placeholder="No project" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="">
                 <SelectItem value="none">No project</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project._id} value={project._id}>

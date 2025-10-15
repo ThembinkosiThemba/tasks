@@ -6,12 +6,15 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { Sidebar } from "@/components/sidebar";
 import { TaskList } from "@/components/task-list-new";
 import { DailySchedule } from "@/components/daily-schedule";
+import { MeetingNotes } from "@/components/meeting-notes";
 import { TaskDialog } from "@/components/task-dialog";
+import { TaskViewDialog } from "@/components/task-view-dialog";
 import { ProjectDialog } from "@/components/project-dialog";
 import { ScheduleDialog } from "@/components/schedule-dialog";
+import { MeetingNoteDialog } from "@/components/meeting-note-dialog";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileHeader } from "@/components/mobile-header";
-import type { Task } from "@/types";
+import type { Task, MeetingNote } from "@/types";
 
 export default function Dashboard() {
   const { signOut } = useAuthActions();
@@ -20,6 +23,7 @@ export default function Dashboard() {
   const projects = useQuery(api.projects.list) ?? [];
   const tasks = useQuery(api.tasks.list, {}) ?? [];
   const dailyTasks = useQuery(api.dailyTasks.list, {}) ?? [];
+  const meetingNotes = useQuery(api.notes.list) ?? [];
 
   // Convex mutations
   const createProject = useMutation(api.projects.create);
@@ -29,6 +33,9 @@ export default function Dashboard() {
   const completeTask = useMutation(api.tasks.complete);
   const createDailyTask = useMutation(api.dailyTasks.create);
   const toggleDailyTaskComplete = useMutation(api.dailyTasks.toggleComplete);
+  const createNote = useMutation(api.notes.create);
+  const updateNote = useMutation(api.notes.update);
+  const deleteNote = useMutation(api.notes.remove);
 
   const [selectedView, setSelectedView] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState(
@@ -36,10 +43,14 @@ export default function Dashboard() {
   );
 
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [taskViewOpen, setTaskViewOpen] = useState(false);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
+  const [viewingTask, setViewingTask] = useState<Task | undefined>();
   const [schedulingTask, setSchedulingTask] = useState<Task | undefined>();
+  const [editingNote, setEditingNote] = useState<MeetingNote | undefined>();
 
   // UI State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -75,6 +86,17 @@ export default function Dashboard() {
       if ((e.metaKey || e.ctrlKey) && e.key === "2") {
         e.preventDefault();
         setSelectedView("daily");
+      }
+      // Cmd/Ctrl + 3 for meeting notes
+      if ((e.metaKey || e.ctrlKey) && e.key === "3") {
+        e.preventDefault();
+        setSelectedView("notes");
+      }
+      // Cmd/Ctrl + M for new meeting note
+      if ((e.metaKey || e.ctrlKey) && e.key === "m") {
+        e.preventDefault();
+        setEditingNote(undefined);
+        setNoteDialogOpen(true);
       }
     };
 
@@ -155,6 +177,30 @@ export default function Dashboard() {
     await toggleDailyTaskComplete({ dailyTaskId });
   };
 
+  const handleSaveNote = async (noteData: Partial<MeetingNote>) => {
+    if (editingNote) {
+      await updateNote({
+        noteId: editingNote._id,
+        title: noteData.title!,
+        content: noteData.content!,
+        date: noteData.date!,
+        tags: noteData.tags,
+      });
+    } else {
+      await createNote({
+        title: noteData.title!,
+        content: noteData.content!,
+        date: noteData.date!,
+        tags: noteData.tags,
+      });
+    }
+    setEditingNote(undefined);
+  };
+
+  const handleDeleteNote = async (noteId: Id<"meetingNotes">) => {
+    await deleteNote({ noteId });
+  };
+
   const filteredTasks =
     selectedView === "all"
       ? tasks
@@ -190,6 +236,19 @@ export default function Dashboard() {
             onAddSchedule={() => setScheduleDialogOpen(true)}
             onToggleComplete={(id) => void handleToggleDailyComplete(id)}
           />
+        ) : selectedView === "notes" ? (
+          <MeetingNotes
+            notes={meetingNotes}
+            onAddNote={() => {
+              setEditingNote(undefined);
+              setNoteDialogOpen(true);
+            }}
+            onEditNote={(note) => {
+              setEditingNote(note);
+              setNoteDialogOpen(true);
+            }}
+            onDeleteNote={(id) => void handleDeleteNote(id)}
+          />
         ) : (
           <TaskList
             tasks={filteredTasks}
@@ -197,6 +256,10 @@ export default function Dashboard() {
             onAddTask={() => {
               setEditingTask(undefined);
               setTaskDialogOpen(true);
+            }}
+            onViewTask={(task) => {
+              setViewingTask(task);
+              setTaskViewOpen(true);
             }}
             onEditTask={(task) => {
               setEditingTask(task);
@@ -224,9 +287,35 @@ export default function Dashboard() {
         }}
         onAddProject={() => setProjectDialogOpen(true)}
         onAddSchedule={() => setScheduleDialogOpen(true)}
+        onAddNote={() => {
+          setEditingNote(undefined);
+          setNoteDialogOpen(true);
+        }}
         onSelectTask={(task) => {
           setEditingTask(task);
           setTaskDialogOpen(true);
+        }}
+      />
+
+      <TaskViewDialog
+        open={taskViewOpen}
+        onOpenChange={setTaskViewOpen}
+        task={viewingTask}
+        project={
+          viewingTask?.projectId
+            ? projects.find((p) => p._id === viewingTask.projectId)
+            : undefined
+        }
+        onEdit={() => {
+          setEditingTask(viewingTask);
+          setTaskDialogOpen(true);
+        }}
+        onDelete={() => {
+          if (viewingTask) void handleDeleteTask(viewingTask._id);
+        }}
+        onSchedule={() => {
+          setSchedulingTask(viewingTask);
+          setScheduleDialogOpen(true);
         }}
       />
 
@@ -250,6 +339,13 @@ export default function Dashboard() {
         tasks={tasks}
         selectedTask={schedulingTask}
         onSave={handleScheduleTask}
+      />
+
+      <MeetingNoteDialog
+        open={noteDialogOpen}
+        onOpenChange={setNoteDialogOpen}
+        note={editingNote}
+        onSave={handleSaveNote}
       />
     </div>
   );

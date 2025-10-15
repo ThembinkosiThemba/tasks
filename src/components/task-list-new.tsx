@@ -25,6 +25,11 @@ import {
   Search,
   Filter,
   GripVertical,
+  Pencil,
+  Trash,
+  ChevronRight,
+  ChevronLeft,
+  ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,29 +48,37 @@ interface TaskListProps {
   tasks: Task[];
   projects: Project[];
   onAddTask: () => void;
+  onViewTask: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: Id<"tasks">) => void;
-  onUpdateTaskStatus: (taskId: Id<"tasks">, status: "todo" | "in-progress" | "done") => void;
+  onUpdateTaskStatus: (
+    taskId: Id<"tasks">,
+    status: "todo" | "in-progress" | "done",
+  ) => void;
   onScheduleTask: (task: Task) => void;
 }
 
 interface TaskCardProps {
   task: Task;
   project?: Project;
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onSchedule: () => void;
   onToggleStatus: () => void;
+  onUpdateStatus: (newStatus: "todo" | "in-progress" | "done") => void;
   isDragging?: boolean;
 }
 
 function TaskCard({
   task,
   project,
+  onView,
   onEdit,
   onDelete,
   onSchedule,
   onToggleStatus,
+  onUpdateStatus,
   isDragging = false,
 }: TaskCardProps) {
   const {
@@ -95,6 +108,39 @@ function TaskCard({
     }
   };
 
+  const getNextStatus = (
+    currentStatus: Task["status"],
+  ): Task["status"] | null => {
+    switch (currentStatus) {
+      case "todo":
+        return "in-progress";
+      case "in-progress":
+        return "done";
+      case "done":
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const getPrevStatus = (
+    currentStatus: Task["status"],
+  ): Task["status"] | null => {
+    switch (currentStatus) {
+      case "todo":
+        return null;
+      case "in-progress":
+        return "todo";
+      case "done":
+        return "in-progress";
+      default:
+        return null;
+    }
+  };
+
+  const nextStatus = getNextStatus(task.status);
+  const prevStatus = getPrevStatus(task.status);
+
   return (
     <div
       ref={setNodeRef}
@@ -103,7 +149,7 @@ function TaskCard({
         "group bg-card border border-border/50 rounded-lg p-4 transition-all duration-200",
         "hover:border-primary/50 hover:shadow-md hover:shadow-primary/5",
         (isDragging || isSortableDragging) && "opacity-50",
-        !isDragging && "animate-in fade-in-0 slide-in-from-bottom-2"
+        !isDragging && "animate-in fade-in-0 slide-in-from-bottom-2",
       )}
     >
       <div className="flex items-start gap-3">
@@ -130,9 +176,9 @@ function TaskCard({
           <h4
             className={cn(
               "font-medium text-sm mb-2 leading-snug cursor-pointer hover:text-primary transition-colors",
-              task.status === "done" && "line-through text-muted-foreground"
+              task.status === "done" && "line-through text-muted-foreground",
             )}
-            onClick={onEdit}
+            onClick={onView}
           >
             {task.title}
           </h4>
@@ -155,11 +201,46 @@ function TaskCard({
             )}
             <Badge
               variant="outline"
-              className={cn("text-xs capitalize font-medium", getPriorityColor(task.priority))}
+              className={cn(
+                "text-xs capitalize font-medium",
+                getPriorityColor(task.priority),
+              )}
             >
               {task.priority}
             </Badge>
           </div>
+        </div>
+
+        {/* Quick status change arrows */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          {prevStatus && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateStatus(prevStatus);
+              }}
+              title={`Move to ${prevStatus}`}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+          {nextStatus && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateStatus(nextStatus);
+              }}
+              title={`Move to ${nextStatus}`}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <DropdownMenu>
@@ -172,13 +253,17 @@ function TaskCard({
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>Edit task</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="bg-dark dark">
+            <DropdownMenuItem onClick={onEdit}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit task
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onSchedule}>
               <Clock className="mr-2 h-4 w-4" />
               Schedule
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onDelete} className="text-destructive">
+              <Trash className="mr-2 h-4 w-4" />
               Delete task
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -192,24 +277,36 @@ function DroppableColumn({
   status,
   tasks,
   projects,
+  onView,
   onEdit,
   onDelete,
   onSchedule,
   onToggleStatus,
+  onUpdateTaskStatus,
 }: {
   status: "todo" | "in-progress" | "done";
   tasks: Task[];
   projects: Project[];
+  onView: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: Id<"tasks">) => void;
   onSchedule: (task: Task) => void;
   onToggleStatus: (taskId: Id<"tasks">) => void;
+  onUpdateTaskStatus: (
+    taskId: Id<"tasks">,
+    status: "todo" | "in-progress" | "done",
+  ) => void;
 }) {
-  const getProject = (projectId?: string) => projects.find((p) => p._id === projectId);
+  const getProject = (projectId?: string) =>
+    projects.find((p) => p._id === projectId);
 
   const statusConfig = {
     todo: { label: "To Do", color: "bg-blue-500", icon: Circle },
-    "in-progress": { label: "In Progress", color: "bg-yellow-500", icon: Clock },
+    "in-progress": {
+      label: "In Progress",
+      color: "bg-yellow-500",
+      icon: Clock,
+    },
     done: { label: "Done", color: "bg-green-500", icon: CheckCircle2 },
   };
 
@@ -226,7 +323,10 @@ function DroppableColumn({
         </Badge>
       </div>
 
-      <SortableContext items={tasks.map((t) => t._id)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={tasks.map((t) => t._id)}
+        strategy={verticalListSortingStrategy}
+      >
         <div className="flex-1 space-y-3 min-h-[200px]">
           {tasks.length === 0 ? (
             <div className="bg-card/30 border-2 border-dashed border-border/50 rounded-lg p-8 text-center">
@@ -239,10 +339,17 @@ function DroppableColumn({
                 key={task._id}
                 task={task}
                 project={getProject(task.projectId)}
+                onView={() => onView(task)}
                 onEdit={() => onEdit(task)}
                 onDelete={() => onDelete(task._id)}
                 onSchedule={() => onSchedule(task)}
                 onToggleStatus={() => onToggleStatus(task._id)}
+                onUpdateStatus={(newStatus) => {
+                  const fullTask = tasks.find((t) => t._id === task._id);
+                  if (fullTask) {
+                    onUpdateTaskStatus(fullTask._id, newStatus);
+                  }
+                }}
               />
             ))
           )}
@@ -256,6 +363,7 @@ export function TaskList({
   tasks,
   projects,
   onAddTask,
+  onViewTask,
   onEditTask,
   onDeleteTask,
   onUpdateTaskStatus,
@@ -263,6 +371,8 @@ export function TaskList({
 }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState<string | null>(null);
+  const [filterProject, setFilterProject] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -270,16 +380,30 @@ export function TaskList({
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
-  const filteredTasks = tasks.filter((task) => {
-    const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPriority = !filterPriority || task.priority === filterPriority;
-    return matchesSearch && matchesPriority;
-  });
+  const filteredTasks = tasks
+    .filter((task) => {
+      const matchesSearch =
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesPriority =
+        !filterPriority || task.priority === filterPriority;
+      const matchesProject =
+        !filterProject ||
+        (filterProject === "none"
+          ? !task.projectId
+          : task.projectId === filterProject);
+      return matchesSearch && matchesPriority && matchesProject;
+    })
+    .sort((a, b) => {
+      if (sortBy === "newest") {
+        return b._creationTime - a._creationTime;
+      } else {
+        return a._creationTime - b._creationTime;
+      }
+    });
 
   const groupedTasks = {
     todo: filteredTasks.filter((t) => t.status === "todo"),
@@ -339,9 +463,12 @@ export function TaskList({
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Tasks</h2>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                Tasks
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {completedTasks} of {totalTasks} tasks completed ({completionPercentage}%)
+                {completedTasks} of {totalTasks} tasks completed (
+                {completionPercentage}%)
               </p>
             </div>
             <Button
@@ -366,35 +493,103 @@ export function TaskList({
               />
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 md:h-11 bg-card border-border/50">
-                  <Filter className="mr-2 h-4 w-4" />
-                  {filterPriority ? `Priority: ${filterPriority}` : "All Priorities"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setFilterPriority(null)}>
-                  All Priorities
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterPriority("high")}>
-                  High Priority
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterPriority("medium")}>
-                  Medium Priority
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterPriority("low")}>
-                  Low Priority
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-10 md:h-11 bg-card border-border/50"
+                  >
+                    <Filter className="mr-2 h-4 w-4" />
+                    {filterPriority
+                      ? `Priority: ${filterPriority}`
+                      : "All Priorities"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setFilterPriority(null)}>
+                    All Priorities
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilterPriority("high")}>
+                    High Priority
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilterPriority("medium")}>
+                    Medium Priority
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilterPriority("low")}>
+                    Low Priority
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-10 md:h-11 bg-card border-border/50"
+                  >
+                    <Filter className="mr-2 h-4 w-4" />
+                    {filterProject
+                      ? filterProject === "none"
+                        ? "No Project"
+                        : projects.find((p) => p._id === filterProject)?.name ||
+                          "Project"
+                      : "All Projects"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setFilterProject(null)}>
+                    All Projects
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilterProject("none")}>
+                    No Project
+                  </DropdownMenuItem>
+                  {projects.map((project) => (
+                    <DropdownMenuItem
+                      key={project._id}
+                      onClick={() => setFilterProject(project._id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: project.color }}
+                        />
+                        {project.name}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-10 md:h-11 bg-card border-border/50"
+                  >
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    {sortBy === "newest" ? "Newest First" : "Oldest First"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setSortBy("newest")}>
+                    Newest First
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("oldest")}>
+                    Oldest First
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {totalTasks > 0 && (
             <div className="bg-card border border-border/50 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Overall Progress</span>
-                <span className="text-sm text-muted-foreground">{completionPercentage}%</span>
+                <span className="text-sm text-muted-foreground">
+                  {completionPercentage}%
+                </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
@@ -420,9 +615,11 @@ export function TaskList({
                 status={status}
                 tasks={groupedTasks[status]}
                 projects={projects}
+                onView={onViewTask}
                 onEdit={onEditTask}
                 onDelete={onDeleteTask}
                 onSchedule={onScheduleTask}
+                onUpdateTaskStatus={onUpdateTaskStatus}
                 onToggleStatus={(taskId) => {
                   const task = tasks.find((t) => t._id === taskId);
                   if (!task) return;
@@ -439,10 +636,12 @@ export function TaskList({
                 <TaskCard
                   task={activeTask}
                   project={activeProject}
+                  onView={() => {}}
                   onEdit={() => {}}
                   onDelete={() => {}}
                   onSchedule={() => {}}
                   onToggleStatus={() => {}}
+                  onUpdateStatus={() => {}}
                   isDragging
                 />
               </div>

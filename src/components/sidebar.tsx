@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -92,6 +93,19 @@ export function Sidebar({
           >
             <Calendar className={cn("h-4 w-4", !collapsed && "mr-3")} />
             {!collapsed && "Daily Schedule"}
+          </Button>
+
+          <Button
+            variant={selectedView === "notes" ? "secondary" : "ghost"}
+            className={cn(
+              "w-full h-10 font-medium transition-all hover:translate-x-1",
+              collapsed ? "justify-center px-0" : "justify-start"
+            )}
+            onClick={() => handleViewChange("notes")}
+            title={collapsed ? "Meeting Notes" : undefined}
+          >
+            <FileText className={cn("h-4 w-4", !collapsed && "mr-3")} />
+            {!collapsed && "Meeting Notes"}
           </Button>
         </div>
 

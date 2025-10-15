@@ -55,7 +55,7 @@ export function ScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="dark bg-dark">
+      <DialogContent className="dark bg-dark overflow-x-scroll">
         <DialogHeader>
           <DialogTitle>Schedule Task</DialogTitle>
         </DialogHeader>
@@ -67,9 +67,13 @@ export function ScheduleDialog({
               <SelectTrigger id="task">
                 <SelectValue placeholder="Select a task" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="overflow-x-hidden">
                 {tasks.map((task) => (
-                  <SelectItem key={task._id} value={task._id}>
+                  <SelectItem
+                    className="line-clamp-1"
+                    key={task._id}
+                    value={task._id}
+                  >
                     {task.title}
                   </SelectItem>
                 ))}

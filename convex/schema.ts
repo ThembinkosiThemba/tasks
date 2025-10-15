@@ -46,4 +46,14 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_task", ["taskId"])
     .index("by_user_and_date", ["userId", "date"]),
+
+  meetingNotes: defineTable({
+    title: v.string(),
+    content: v.string(),
+    date: v.string(),
+    tags: v.optional(v.array(v.string())),
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_date", ["userId", "date"]),
 });

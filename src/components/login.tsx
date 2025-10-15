@@ -1,10 +1,12 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 export function SignInForm() {
   const { signIn } = useAuthActions();
   const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark p-4 relative overflow-hidden dark">
@@ -40,11 +42,17 @@ export function SignInForm() {
             className="space-y-6"
             onSubmit={(e) => {
               e.preventDefault();
+              setIsLoading(true);
+              setError(null);
               const formData = new FormData(e.target as HTMLFormElement);
               formData.set("flow", flow);
-              void signIn("password", formData).catch((error) => {
-                setError(error.message);
-              });
+              void signIn("password", formData)
+                .catch((error) => {
+                  setError(error.message);
+                })
+                .finally(() => {
+                  setIsLoading(false);
+                });
             }}
           >
             <div className="space-y-4">
@@ -91,9 +99,15 @@ export function SignInForm() {
 
             <button
               type="submit"
-              className="w-full h-12 bg-primary text-primary-foreground rounded-md font-medium shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
+              disabled={isLoading}
+              className="w-full h-12 bg-primary text-primary-foreground rounded-md font-medium shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {flow === "signIn" ? "Sign in to task" : "Create account"}
+              {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+              {isLoading
+                ? "Please wait..."
+                : flow === "signIn"
+                  ? "Sign in to task"
+                  : "Create account"}
             </button>
 
             <div className="text-center">
@@ -104,8 +118,12 @@ export function SignInForm() {
               </span>
               <button
                 type="button"
-                className="text-sm text-primary underline hover:no-underline"
-                onClick={() => setFlow(flow === "signIn" ? "signUp" : "signIn")}
+                disabled={isLoading}
+                className="text-sm text-primary underline hover:no-underline disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  setFlow(flow === "signIn" ? "signUp" : "signIn");
+                  setError(null);
+                }}
               >
                 {flow === "signIn" ? "Sign up" : "Sign in"}
               </button>

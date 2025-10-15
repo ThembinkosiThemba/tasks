@@ -16,7 +16,7 @@ export default defineConfig({
         name: "Task - Management App",
         short_name: "Oasis",
         description: "Track your projects and open tickets",
-        theme_color: "#10b981",
+        theme_color: "#0f172a",
         background_color: "#0f172a",
         display: "standalone",
         orientation: "portrait",
