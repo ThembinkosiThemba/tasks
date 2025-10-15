@@ -79,7 +79,7 @@ export function TaskList({
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="flex-1 overflow-auto bg-background">
+    <div className="flex-1 overflow-auto bg-dark dark">
       <div className="p-8 space-y-6 max-w-[1600px] mx-auto">
         <div className="space-y-6">
           <div className="flex items-center justify-between">

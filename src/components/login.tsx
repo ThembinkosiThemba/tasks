@@ -7,7 +7,7 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden dark">
+    <div className="min-h-screen flex items-center justify-center bg-dark p-4 relative overflow-hidden dark">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
