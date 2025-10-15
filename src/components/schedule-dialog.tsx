@@ -55,7 +55,7 @@ export function ScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="dark bg-dark">
         <DialogHeader>
           <DialogTitle>Schedule Task</DialogTitle>
         </DialogHeader>

@@ -6,6 +6,8 @@ import {
   CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,94 +58,123 @@ export function DailySchedule({
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="p-8 space-y-6 max-w-4xl mx-auto">
+    <div className="flex-1 overflow-auto bg-dark dark">
+      <div className="p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
                 Daily Schedule
               </h2>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Plan and track your daily tasks
               </p>
             </div>
             <Button
               onClick={onAddSchedule}
               size="lg"
-              className="h-11 shadow-lg shadow-primary/20"
+              className="h-10 md:h-11 shadow-lg shadow-primary/20 w-full sm:w-auto"
             >
               <Plus className="mr-2 h-4 w-4" />
               Schedule Task
             </Button>
           </div>
 
-          <div className="bg-card border border-border/50 rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => changeDate(-1)}
-                className="h-10 w-10"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="md:col-span-2 bg-card border border-border/50 rounded-xl p-4 md:p-6 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => changeDate(-1)}
+                  className="h-9 w-9 shrink-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
 
-              <div className="flex-1 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <CalendarIcon className="h-5 w-5 text-primary" />
-                  <h3 className="text-2xl font-bold">
-                    {new Date(selectedDate).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </h3>
-                </div>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => onDateChange(e.target.value)}
-                  className="px-4 py-2 bg-background border border-border/50 rounded-lg text-sm font-medium hover:border-primary/50 transition-colors cursor-pointer"
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => changeDate(1)}
-                className="h-10 w-10"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {!isToday && (
-              <Button
-                variant="outline"
-                onClick={goToToday}
-                className="w-full bg-transparent"
-              >
-                Jump to Today
-              </Button>
-            )}
-
-            {totalCount > 0 && (
-              <div className="pt-4 border-t border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Daily Progress</span>
-                  <span className="text-sm text-muted-foreground">
-                    {completedCount} of {totalCount} completed
-                  </span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-500 ease-out"
-                    style={{ width: `${completionPercentage}%` }}
+                <div className="flex-1 text-center min-w-0">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
+                    <h3 className="text-lg md:text-2xl font-bold truncate">
+                      {new Date(selectedDate).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </h3>
+                  </div>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => onDateChange(e.target.value)}
+                    className="px-3 md:px-4 py-1.5 md:py-2 bg-background border border-border/50 rounded-lg text-xs md:text-sm font-medium hover:border-primary/50 transition-colors cursor-pointer"
                   />
                 </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => changeDate(1)}
+                  className="h-9 w-9 shrink-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-            )}
+
+              {!isToday && (
+                <Button
+                  variant="outline"
+                  onClick={goToToday}
+                  className="w-full bg-transparent text-xs md:text-sm"
+                >
+                  Jump to Today
+                </Button>
+              )}
+            </div>
+
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 md:p-6 space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Target className="h-5 w-5" />
+                <h4 className="font-semibold">Daily Stats</h4>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Total Tasks
+                  </span>
+                  <span className="text-2xl font-bold">{totalCount}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Completed
+                  </span>
+                  <span className="text-2xl font-bold text-primary">
+                    {completedCount}
+                  </span>
+                </div>
+              </div>
+
+              {totalCount > 0 && (
+                <div className="pt-3 border-t border-primary/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" />
+                      Progress
+                    </span>
+                    <span className="text-sm font-bold">
+                      {completionPercentage}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-background/50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-500 ease-out"
+                      style={{ width: `${completionPercentage}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -179,18 +210,18 @@ export function DailySchedule({
                   return (
                     <div
                       key={dailyTask._id}
-                      className="bg-card border border-border/50 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
+                      className="bg-card border border-border/50 rounded-xl p-4 md:p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-col items-center gap-1 min-w-[80px]">
+                      <div className="flex items-start gap-3 md:gap-4">
+                        <div className="flex flex-col items-center gap-1 min-w-[70px] md:min-w-[80px] shrink-0">
                           <Badge
                             variant="outline"
                             className="font-mono text-xs px-2 py-1 bg-primary/5 border-primary/20"
                           >
                             {dailyTask.startTime}
                           </Badge>
-                          <div className="h-6 w-px bg-border" />
+                          <div className="h-4 md:h-6 w-px bg-border" />
                           <Badge
                             variant="outline"
                             className="font-mono text-xs px-2 py-1 bg-muted"
@@ -201,19 +232,19 @@ export function DailySchedule({
 
                         <button
                           onClick={() => onToggleComplete(dailyTask._id)}
-                          className="mt-2 transition-transform hover:scale-110"
+                          className="mt-1 md:mt-2 transition-transform hover:scale-110 shrink-0"
                         >
                           {dailyTask.completed ? (
-                            <CheckCircle2 className="h-6 w-6 text-primary" />
+                            <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                           ) : (
-                            <Circle className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                            <Circle className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground hover:text-primary transition-colors" />
                           )}
                         </button>
 
-                        <div className="flex-1 min-w-0 pt-1">
+                        <div className="flex-1 min-w-0 pt-0 md:pt-1">
                           <h4
                             className={cn(
-                              "font-semibold text-base mb-2 leading-snug",
+                              "font-semibold text-sm md:text-base mb-2 leading-snug",
                               dailyTask.completed &&
                                 "line-through text-muted-foreground",
                             )}
@@ -221,18 +252,22 @@ export function DailySchedule({
                             {task.title}
                           </h4>
                           {task.description && (
-                            <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                            <p className="text-xs md:text-sm text-muted-foreground mb-3 leading-relaxed line-clamp-2">
                               {task.description}
                             </p>
                           )}
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {project && (
-                              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50">
+                              <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-background/50 border border-border/30">
                                 <div
-                                  className={`h-2.5 w-2.5 rounded-full ring-2 ring-offset-1 ring-offset-card bg-[${project.color}] ring-[${project.color}]`}
+                                  className="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full ring-2 ring-offset-1 ring-offset-card"
+                                  style={{
+                                    backgroundColor: project.color,
+                                    boxShadow: `0 0 0 2px ${project.color}40`,
+                                  }}
                                 />
-                                <span className="text-xs font-medium">
+                                <span className="text-xs font-medium truncate max-w-[120px]">
                                   {project.name}
                                 </span>
                               </div>
@@ -241,7 +276,7 @@ export function DailySchedule({
                               variant="secondary"
                               className="text-xs capitalize"
                             >
-                              {task.priority} priority
+                              {task.priority}
                             </Badge>
                           </div>
                         </div>

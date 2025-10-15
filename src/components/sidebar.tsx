@@ -5,19 +5,27 @@ import {
   LogOut,
   LayoutGrid,
   Search,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import type { Project } from "@/types";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   projects: Project[];
-  selectedView: "all" | "daily" | string;
+  selectedView: string;
   onViewChange: (view: string) => void;
   onAddProject: () => void;
   onLogout: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 export function Sidebar({
@@ -26,6 +34,10 @@ export function Sidebar({
   onViewChange,
   onAddProject,
   onLogout,
+  collapsed = false,
+  onToggleCollapse,
+  mobileOpen = false,
+  onMobileClose,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -33,17 +45,24 @@ export function Sidebar({
     p.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  return (
-    <div className="w-72 border-r border-border bg-card/50 backdrop-blur-sm flex flex-col h-screen">
+  const handleViewChange = (view: string) => {
+    onViewChange(view);
+    if (onMobileClose) onMobileClose();
+  };
+
+  const sidebarContent = (
+    <>
       <div className="p-6 border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
+        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 shrink-0">
             <CheckSquare className="w-5 h-5 text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">task</h1>
-            <p className="text-xs text-muted-foreground">Workspace</p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold tracking-tight">task</h1>
+              <p className="text-xs text-muted-foreground">Workspace</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -51,84 +70,185 @@ export function Sidebar({
         <div className="p-4 space-y-1">
           <Button
             variant={selectedView === "all" ? "secondary" : "ghost"}
-            className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1"
-            onClick={() => onViewChange("all")}
+            className={cn(
+              "w-full h-10 font-medium transition-all hover:translate-x-1",
+              collapsed ? "justify-center px-0" : "justify-start"
+            )}
+            onClick={() => handleViewChange("all")}
+            title={collapsed ? "All Tasks" : undefined}
           >
-            <LayoutGrid className="mr-3 h-4 w-4" />
-            All Tasks
+            <LayoutGrid className={cn("h-4 w-4", !collapsed && "mr-3")} />
+            {!collapsed && "All Tasks"}
           </Button>
 
           <Button
             variant={selectedView === "daily" ? "secondary" : "ghost"}
-            className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1"
-            onClick={() => onViewChange("daily")}
+            className={cn(
+              "w-full h-10 font-medium transition-all hover:translate-x-1",
+              collapsed ? "justify-center px-0" : "justify-start"
+            )}
+            onClick={() => handleViewChange("daily")}
+            title={collapsed ? "Daily Schedule" : undefined}
           >
-            <Calendar className="mr-3 h-4 w-4" />
-            Daily Schedule
+            <Calendar className={cn("h-4 w-4", !collapsed && "mr-3")} />
+            {!collapsed && "Daily Schedule"}
           </Button>
         </div>
 
-        <div className="px-4 pt-6 pb-3">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground/90">
-              Projects
-            </h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-              onClick={onAddProject}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 pl-9 bg-background/50 border-border/50 text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="px-4 pb-4">
-          <div className="space-y-1">
-            {filteredProjects.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
-                {searchQuery ? "No projects found" : "No projects yet"}
+        {!collapsed && (
+          <>
+            <div className="px-4 pt-6 pb-3">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-foreground/90">
+                  Projects
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                  onClick={onAddProject}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-            ) : (
-              filteredProjects.map((project) => (
+
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-9 pl-9 bg-background/50 border-border/50 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="px-4 pb-4">
+              <div className="space-y-1">
+                {filteredProjects.length === 0 ? (
+                  <div className="text-center py-8 text-sm text-muted-foreground">
+                    {searchQuery ? "No projects found" : "No projects yet"}
+                  </div>
+                ) : (
+                  filteredProjects.map((project) => (
+                    <Button
+                      key={project._id}
+                      variant={selectedView === project._id ? "secondary" : "ghost"}
+                      className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1 group"
+                      onClick={() => handleViewChange(project._id)}
+                    >
+                      <div
+                        className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
+                        style={{
+                          backgroundColor: project.color,
+                          boxShadow: `0 0 0 2px ${project.color}40`
+                        }}
+                      />
+                      <span className="truncate">{project.name}</span>
+                    </Button>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {collapsed && projects.length > 0 && (
+          <div className="px-2 py-4">
+            <div className="space-y-2">
+              {projects.slice(0, 5).map((project) => (
                 <Button
                   key={project._id}
                   variant={selectedView === project._id ? "secondary" : "ghost"}
-                  className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1 group"
-                  onClick={() => onViewChange(project._id)}
+                  className="w-full justify-center h-10 px-0 transition-all hover:scale-110"
+                  onClick={() => handleViewChange(project._id)}
+                  title={project.name}
                 >
                   <div
-                    className={`mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110 bg-[${project.color}] ring-[${project.color}40]`}
+                    className="h-4 w-4 rounded-full ring-2 ring-offset-2 ring-offset-card"
+                    style={{
+                      backgroundColor: project.color,
+                      boxShadow: `0 0 0 2px ${project.color}40`
+                    }}
                   />
-                  <span className="truncate">{project.name}</span>
                 </Button>
-              ))
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </ScrollArea>
 
       <div className="p-4 border-t border-border/50 space-y-1">
         <Button
           variant="ghost"
-          className="w-full justify-start h-10 text-muted-foreground hover:text-destructive transition-all hover:translate-x-1"
+          className={cn(
+            "w-full h-10 text-muted-foreground hover:text-destructive transition-all hover:translate-x-1",
+            collapsed ? "justify-center px-0" : "justify-start"
+          )}
           onClick={onLogout}
+          title={collapsed ? "Sign out" : undefined}
         >
-          <LogOut className="mr-3 h-4 w-4" />
-          Sign out
+          <LogOut className={cn("h-4 w-4", !collapsed && "mr-3")} />
+          {!collapsed && "Sign out"}
         </Button>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "border-r border-border bg-card/50 backdrop-blur-sm flex flex-col h-screen transition-all duration-300 relative",
+          // Desktop behavior
+          "hidden lg:flex",
+          collapsed ? "w-20" : "w-72",
+          // Mobile behavior
+          "lg:relative lg:translate-x-0",
+          mobileOpen
+            ? "fixed inset-y-0 left-0 z-50 flex w-72 translate-x-0"
+            : "fixed -translate-x-full"
+        )}
+      >
+        {/* Mobile close button */}
+        {mobileOpen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 lg:hidden z-10"
+            onClick={onMobileClose}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+
+        {sidebarContent}
+
+        {/* Desktop collapse toggle */}
+        {onToggleCollapse && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex absolute -right-3 top-20 h-6 w-6 rounded-full border border-border bg-card shadow-md hover:bg-accent z-10"
+            onClick={onToggleCollapse}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+      </div>
+    </>
   );
 }
