@@ -58,7 +58,6 @@ export function TaskViewDialog({
   };
 
   const statusConfig = getStatusConfig(task.status);
-  const StatusIcon = statusConfig.icon;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

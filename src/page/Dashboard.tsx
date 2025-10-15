@@ -14,6 +14,7 @@ import { ScheduleDialog } from "@/components/schedule-dialog";
 import { MeetingNoteDialog } from "@/components/meeting-note-dialog";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileHeader } from "@/components/mobile-header";
+import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import type { Task, MeetingNote } from "@/types";
 
 export default function Dashboard() {
@@ -24,6 +25,8 @@ export default function Dashboard() {
   const tasks = useQuery(api.tasks.list, {}) ?? [];
   const dailyTasks = useQuery(api.dailyTasks.list, {}) ?? [];
   const meetingNotes = useQuery(api.notes.list) ?? [];
+  const notifications = useQuery(api.notifications.list) ?? [];
+  const unreadCount = useQuery(api.notifications.getUnreadCount) ?? 0;
 
   // Convex mutations
   const createProject = useMutation(api.projects.create);
@@ -36,6 +39,11 @@ export default function Dashboard() {
   const createNote = useMutation(api.notes.create);
   const updateNote = useMutation(api.notes.update);
   const deleteNote = useMutation(api.notes.remove);
+  const markNotificationAsRead = useMutation(api.notifications.markAsRead);
+  const markAllNotificationsAsRead = useMutation(
+    api.notifications.markAllAsRead,
+  );
+  const deleteNotification = useMutation(api.notifications.remove);
 
   const [selectedView, setSelectedView] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState(
@@ -117,6 +125,7 @@ export default function Dashboard() {
         projectId: taskData.projectId,
         status: taskData.status!,
         priority: taskData.priority!,
+        reminderDate: taskData.reminderDate,
       });
     } else {
       await createTask({
@@ -125,6 +134,7 @@ export default function Dashboard() {
         projectId: taskData.projectId,
         status: taskData.status || "todo",
         priority: taskData.priority || "medium",
+        reminderDate: taskData.reminderDate,
       });
     }
     setEditingTask(undefined);
@@ -201,6 +211,22 @@ export default function Dashboard() {
     await deleteNote({ noteId });
   };
 
+  const handleMarkNotificationAsRead = async (
+    notificationId: Id<"notifications">,
+  ) => {
+    await markNotificationAsRead({ notificationId });
+  };
+
+  const handleMarkAllNotificationsAsRead = async () => {
+    await markAllNotificationsAsRead();
+  };
+
+  const handleDeleteNotification = async (
+    notificationId: Id<"notifications">,
+  ) => {
+    await deleteNotification({ notificationId });
+  };
+
   const filteredTasks =
     selectedView === "all"
       ? tasks
@@ -211,6 +237,15 @@ export default function Dashboard() {
       <MobileHeader
         onMenuOpen={() => setMobileMenuOpen(true)}
         onCommandOpen={() => setCommandPaletteOpen(true)}
+        notificationsSlot={
+          <NotificationsDropdown
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAsRead={(id) => void handleMarkNotificationAsRead(id)}
+            onMarkAllAsRead={() => void handleMarkAllNotificationsAsRead()}
+            onDelete={(id) => void handleDeleteNotification(id)}
+          />
+        }
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -266,7 +301,9 @@ export default function Dashboard() {
               setTaskDialogOpen(true);
             }}
             onDeleteTask={(id) => void handleDeleteTask(id)}
-            onUpdateTaskStatus={(id, status) => void handleUpdateTaskStatus(id, status)}
+            onUpdateTaskStatus={(id, status) =>
+              void handleUpdateTaskStatus(id, status)
+            }
             onScheduleTask={(task) => {
               setSchedulingTask(task);
               setScheduleDialogOpen(true);

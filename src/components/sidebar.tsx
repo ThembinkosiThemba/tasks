@@ -54,7 +54,12 @@ export function Sidebar({
   const sidebarContent = (
     <>
       <div className="p-6 border-b border-border/50">
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+        <div
+          className={cn(
+            "flex items-center gap-3",
+            collapsed && "justify-center",
+          )}
+        >
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 shrink-0">
             <CheckSquare className="w-5 h-5 text-primary" />
           </div>
@@ -73,7 +78,7 @@ export function Sidebar({
             variant={selectedView === "all" ? "secondary" : "ghost"}
             className={cn(
               "w-full h-10 font-medium transition-all hover:translate-x-1",
-              collapsed ? "justify-center px-0" : "justify-start"
+              collapsed ? "justify-center px-0" : "justify-start",
             )}
             onClick={() => handleViewChange("all")}
             title={collapsed ? "All Tasks" : undefined}
@@ -86,7 +91,7 @@ export function Sidebar({
             variant={selectedView === "daily" ? "secondary" : "ghost"}
             className={cn(
               "w-full h-10 font-medium transition-all hover:translate-x-1",
-              collapsed ? "justify-center px-0" : "justify-start"
+              collapsed ? "justify-center px-0" : "justify-start",
             )}
             onClick={() => handleViewChange("daily")}
             title={collapsed ? "Daily Schedule" : undefined}
@@ -96,10 +101,11 @@ export function Sidebar({
           </Button>
 
           <Button
+            disabled
             variant={selectedView === "notes" ? "secondary" : "ghost"}
             className={cn(
               "w-full h-10 font-medium transition-all hover:translate-x-1",
-              collapsed ? "justify-center px-0" : "justify-start"
+              collapsed ? "justify-center px-0" : "justify-start",
             )}
             onClick={() => handleViewChange("notes")}
             title={collapsed ? "Meeting Notes" : undefined}
@@ -147,7 +153,9 @@ export function Sidebar({
                   filteredProjects.map((project) => (
                     <Button
                       key={project._id}
-                      variant={selectedView === project._id ? "secondary" : "ghost"}
+                      variant={
+                        selectedView === project._id ? "secondary" : "ghost"
+                      }
                       className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1 group"
                       onClick={() => handleViewChange(project._id)}
                     >
@@ -155,7 +163,7 @@ export function Sidebar({
                         className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
                         style={{
                           backgroundColor: project.color,
-                          boxShadow: `0 0 0 2px ${project.color}40`
+                          boxShadow: `0 0 0 2px ${project.color}40`,
                         }}
                       />
                       <span className="truncate">{project.name}</span>
@@ -182,7 +190,7 @@ export function Sidebar({
                     className="h-4 w-4 rounded-full ring-2 ring-offset-2 ring-offset-card"
                     style={{
                       backgroundColor: project.color,
-                      boxShadow: `0 0 0 2px ${project.color}40`
+                      boxShadow: `0 0 0 2px ${project.color}40`,
                     }}
                   />
                 </Button>
@@ -197,7 +205,7 @@ export function Sidebar({
           variant="ghost"
           className={cn(
             "w-full h-10 text-muted-foreground hover:text-destructive transition-all hover:translate-x-1",
-            collapsed ? "justify-center px-0" : "justify-start"
+            collapsed ? "justify-center px-0" : "justify-start",
           )}
           onClick={onLogout}
           title={collapsed ? "Sign out" : undefined}
@@ -230,7 +238,7 @@ export function Sidebar({
           "lg:relative lg:translate-x-0",
           mobileOpen
             ? "fixed inset-y-0 left-0 z-50 flex w-72 translate-x-0"
-            : "fixed -translate-x-full"
+            : "fixed -translate-x-full",
         )}
       >
         {/* Mobile close button */}

@@ -29,6 +29,7 @@ export default defineSchema({
       v.literal("high")
     ),
     completedAt: v.optional(v.number()),
+    reminderDate: v.optional(v.number()),
     userId: v.id("users"),
   })
     .index("by_user", ["userId"])
@@ -56,4 +57,15 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_and_date", ["userId", "date"]),
+
+  notifications: defineTable({
+    type: v.string(),
+    title: v.string(),
+    message: v.string(),
+    taskId: v.optional(v.id("tasks")),
+    read: v.boolean(),
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_read", ["userId", "read"]),
 });

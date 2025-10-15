@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Menu, Command, CheckSquare } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface MobileHeaderProps {
   onMenuOpen: () => void;
   onCommandOpen: () => void;
+  notificationsSlot?: ReactNode;
 }
 
-export function MobileHeader({ onMenuOpen, onCommandOpen }: MobileHeaderProps) {
+export function MobileHeader({ onMenuOpen, onCommandOpen, notificationsSlot }: MobileHeaderProps) {
   return (
     <header className="sticky top-0 z-30 lg:hidden w-full border-b border-border/40 bg-card/80 backdrop-blur-md supports-[backdrop-filter]:bg-card/60">
       <div className="flex h-14 items-center px-4 gap-3">
@@ -25,6 +27,8 @@ export function MobileHeader({ onMenuOpen, onCommandOpen }: MobileHeaderProps) {
           </div>
           <h1 className="text-lg font-bold tracking-tight truncate">task</h1>
         </div>
+
+        {notificationsSlot && <div className="shrink-0">{notificationsSlot}</div>}
 
         <Button
           variant="ghost"

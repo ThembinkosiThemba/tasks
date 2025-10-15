@@ -40,6 +40,7 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState<string>("none");
   const [status, setStatus] = useState<Task["status"]>("todo");
   const [priority, setPriority] = useState<Task["priority"]>("medium");
+  const [reminderDate, setReminderDate] = useState<string>("");
 
   useEffect(() => {
     if (task) {
@@ -48,12 +49,18 @@ export function TaskDialog({
       setProjectId((task.projectId as string) || "none");
       setStatus(task.status);
       setPriority(task.priority);
+      setReminderDate(
+        task.reminderDate
+          ? new Date(task.reminderDate).toISOString().slice(0, 16)
+          : ""
+      );
     } else {
       setTitle("");
       setDescription("");
       setProjectId("none");
       setStatus("todo");
       setPriority("medium");
+      setReminderDate("");
     }
   }, [task, open]);
 
@@ -65,6 +72,7 @@ export function TaskDialog({
       projectId: projectId === "none" ? undefined : (projectId as any),
       status,
       priority,
+      reminderDate: reminderDate ? new Date(reminderDate).getTime() : undefined,
     });
     onOpenChange(false);
   };
@@ -156,6 +164,17 @@ export function TaskDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reminder">Reminder (optional)</Label>
+            <Input
+              id="reminder"
+              type="datetime-local"
+              value={reminderDate}
+              onChange={(e) => setReminderDate(e.target.value)}
+              placeholder="Set a reminder"
+            />
           </div>
 
           <div className="flex justify-end gap-2">

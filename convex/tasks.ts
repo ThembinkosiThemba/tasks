@@ -30,6 +30,7 @@ export const list = query({
         v.literal("high")
       ),
       completedAt: v.optional(v.number()),
+      reminderDate: v.optional(v.number()),
       userId: v.id("users"),
     })
   ),
@@ -86,6 +87,7 @@ export const get = query({
         v.literal("high")
       ),
       completedAt: v.optional(v.number()),
+      reminderDate: v.optional(v.number()),
       userId: v.id("users"),
     }),
     v.null()
@@ -121,6 +123,7 @@ export const create = mutation({
       v.literal("done")
     ),
     priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    reminderDate: v.optional(v.number()),
   },
   returns: v.id("tasks"),
   handler: async (ctx, args) => {
@@ -143,6 +146,7 @@ export const create = mutation({
       projectId: args.projectId,
       status: args.status,
       priority: args.priority,
+      reminderDate: args.reminderDate,
       userId: userId,
     });
 
@@ -165,6 +169,7 @@ export const update = mutation({
       v.literal("done")
     ),
     priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    reminderDate: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -197,6 +202,7 @@ export const update = mutation({
       projectId: args.projectId,
       status: args.status,
       priority: args.priority,
+      reminderDate: args.reminderDate,
     });
 
     return null;

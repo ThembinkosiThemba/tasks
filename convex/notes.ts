@@ -16,9 +16,10 @@ export const list = query({
       date: v.string(),
       tags: v.optional(v.array(v.string())),
       userId: v.id("users"),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
+    console.log(args);
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
       throw new Error("Not authenticated");
@@ -49,7 +50,7 @@ export const get = query({
       tags: v.optional(v.array(v.string())),
       userId: v.id("users"),
     }),
-    v.null()
+    v.null(),
   ),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);

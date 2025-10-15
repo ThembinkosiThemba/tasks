@@ -18,6 +18,7 @@ export interface Task {
   status: "todo" | "in-progress" | "done"
   priority: "low" | "medium" | "high"
   completedAt?: number
+  reminderDate?: number
   userId: Id<"users">
 }
 
@@ -44,5 +45,16 @@ export interface MeetingNote {
   content: string
   date: string
   tags?: string[]
+  userId: Id<"users">
+}
+
+export interface Notification {
+  _id: Id<"notifications">
+  _creationTime: number
+  type: string
+  title: string
+  message: string
+  taskId?: Id<"tasks">
+  read: boolean
   userId: Id<"users">
 }
