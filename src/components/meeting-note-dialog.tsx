@@ -27,20 +27,14 @@ export function MeetingNoteDialog({
 }: MeetingNoteDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [date, setDate] = useState("");
-  const [tags, setTags] = useState("");
 
   useEffect(() => {
     if (note) {
       setTitle(note.title);
       setContent(note.content);
-      setDate(note.date);
-      setTags(note.tags?.join(", ") || "");
     } else {
       setTitle("");
       setContent("");
-      setDate(new Date().toISOString().split("T")[0]);
-      setTags("");
     }
   }, [note, open]);
 
@@ -49,8 +43,7 @@ export function MeetingNoteDialog({
     onSave({
       title,
       content,
-      date,
-      tags: tags.trim() ? tags.split(",").map((t) => t.trim()) : undefined,
+      date: new Date().toISOString().split("T")[0], // Auto-set to today
     });
     onOpenChange(false);
   };
@@ -73,27 +66,7 @@ export function MeetingNoteDialog({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Meeting title"
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags (comma-separated)</Label>
-            <Input
-              id="tags"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="e.g., team, planning, quarterly"
+              className="text-xl font-semibold"
             />
           </div>
 
@@ -103,32 +76,27 @@ export function MeetingNoteDialog({
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="# Meeting Notes
-
-## Attendees
--
-
-## Discussion Points
--
-
-## Action Items
--
-
-## Next Steps
-- "
-              rows={15}
-              className="font-mono text-sm"
+              placeholder="Start writing your notes... (Markdown supported)"
+              rows={20}
+              className="font-normal text-base leading-relaxed"
               required
             />
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button variant="secondary" type="submit">
-              Save
-            </Button>
+          <div className="flex justify-between items-center gap-2 pt-4">
+            <span className="text-sm text-muted-foreground">
+              Date will be set to today
+            </span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
+            </div>
           </div>
         </form>
       </DialogContent>

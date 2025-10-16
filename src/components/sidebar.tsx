@@ -7,6 +7,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
   FileText,
 } from "lucide-react";
@@ -41,6 +42,7 @@ export function Sidebar({
   onMobileClose,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
 
   const filteredProjects = projects.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -52,7 +54,7 @@ export function Sidebar({
   };
 
   const sidebarContent = (
-    <>
+    <div className="bg-dark">
       <div className="p-6 border-b border-border/50">
         <div
           className={cn(
@@ -108,10 +110,10 @@ export function Sidebar({
               collapsed ? "justify-center px-0" : "justify-start",
             )}
             onClick={() => handleViewChange("notes")}
-            title={collapsed ? "Meeting Notes" : undefined}
+            title={collapsed ? "Notes" : undefined}
           >
             <FileText className={cn("h-4 w-4", !collapsed && "mr-3")} />
-            {!collapsed && "Meeting Notes"}
+            {!collapsed && "Notes"}
           </Button>
         </div>
 
@@ -119,9 +121,17 @@ export function Sidebar({
           <>
             <div className="px-4 pt-6 pb-3">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-foreground/90">
-                  Projects
-                </h3>
+                <button
+                  onClick={() => setProjectsExpanded(!projectsExpanded)}
+                  className="flex items-center gap-2 text-sm font-semibold text-foreground/90 hover:text-primary transition-colors"
+                >
+                  {projectsExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                  <span>Projects</span>
+                </button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -132,46 +142,50 @@ export function Sidebar({
                 </Button>
               </div>
 
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search projects..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 pl-9 bg-background/50 border-border/50 text-sm"
-                />
-              </div>
+              {projectsExpanded && (
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search projects..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 pl-9 bg-background/50 border-border/50 text-sm"
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="px-4 pb-4">
-              <div className="space-y-1">
-                {filteredProjects.length === 0 ? (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    {searchQuery ? "No projects found" : "No projects yet"}
-                  </div>
-                ) : (
-                  filteredProjects.map((project) => (
-                    <Button
-                      key={project._id}
-                      variant={
-                        selectedView === project._id ? "secondary" : "ghost"
-                      }
-                      className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1 group"
-                      onClick={() => handleViewChange(project._id)}
-                    >
-                      <div
-                        className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
-                        style={{
-                          backgroundColor: project.color,
-                          boxShadow: `0 0 0 2px ${project.color}40`,
-                        }}
-                      />
-                      <span className="truncate">{project.name}</span>
-                    </Button>
-                  ))
-                )}
+            {projectsExpanded && (
+              <div className="px-4 pb-4">
+                <div className="space-y-1">
+                  {filteredProjects.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      {searchQuery ? "No projects found" : "No projects yet"}
+                    </div>
+                  ) : (
+                    filteredProjects.map((project) => (
+                      <Button
+                        key={project._id}
+                        variant={
+                          selectedView === project._id ? "secondary" : "ghost"
+                        }
+                        className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1 group"
+                        onClick={() => handleViewChange(project._id)}
+                      >
+                        <div
+                          className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
+                          style={{
+                            backgroundColor: project.color,
+                            boxShadow: `0 0 0 2px ${project.color}40`,
+                          }}
+                        />
+                        <span className="truncate">{project.name}</span>
+                      </Button>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
 
@@ -200,7 +214,7 @@ export function Sidebar({
         )}
       </ScrollArea>
 
-      <div className="p-4 border-t border-border/50 space-y-1">
+      <div className="p-4 border-none border-border/50 space-y-1">
         <Button
           variant="ghost"
           className={cn(
@@ -214,7 +228,7 @@ export function Sidebar({
           {!collapsed && "Sign out"}
         </Button>
       </div>
-    </>
+    </div>
   );
 
   return (
@@ -230,10 +244,10 @@ export function Sidebar({
       {/* Sidebar */}
       <div
         className={cn(
-          "border-r border-border bg-card/50 backdrop-blur-sm flex flex-col h-screen transition-all duration-300 relative",
+          "border-r border-border bg-dark backdrop-blur-sm flex flex-col h-screen transition-all duration-300 relative",
           // Desktop behavior
           "hidden lg:flex",
-          collapsed ? "w-20" : "w-72",
+          collapsed ? "w-20" : "w-56",
           // Mobile behavior
           "lg:relative lg:translate-x-0",
           mobileOpen

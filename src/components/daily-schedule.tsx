@@ -81,7 +81,7 @@ export function DailySchedule({
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 bg-card border border-border/50 rounded-xl p-4 md:p-6 space-y-4">
+            <div className="md:col-span-2 bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4 md:p-6 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <Button
                   variant="outline"
@@ -180,7 +180,7 @@ export function DailySchedule({
 
         <div className="space-y-3">
           {todaySchedule.length === 0 ? (
-            <div className="bg-card/50 border border-dashed border-border rounded-xl p-12 text-center">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-dashed border-border rounded-xl p-12 text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
                 <Clock className="h-8 w-8 text-primary" />
               </div>
@@ -210,7 +210,7 @@ export function DailySchedule({
                   return (
                     <div
                       key={dailyTask._id}
-                      className="bg-card border border-border/50 rounded-xl p-4 md:p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
+                      className="bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4 md:p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="flex items-start gap-3 md:gap-4">

@@ -22,7 +22,9 @@ export default function Dashboard() {
 
   // Convex queries
   const projects = useQuery(api.projects.list) ?? [];
-  const tasks = useQuery(api.tasks.list, {}) ?? [];
+  const tasksQuery = useQuery(api.tasks.list, {});
+  const tasks = tasksQuery ?? [];
+  const isTasksLoading = tasksQuery === undefined;
   const dailyTasks = useQuery(api.dailyTasks.list, {}) ?? [];
   const meetingNotes = useQuery(api.notes.list) ?? [];
   const notifications = useQuery(api.notifications.list) ?? [];
@@ -194,14 +196,12 @@ export default function Dashboard() {
         title: noteData.title!,
         content: noteData.content!,
         date: noteData.date!,
-        tags: noteData.tags,
       });
     } else {
       await createNote({
         title: noteData.title!,
         content: noteData.content!,
         date: noteData.date!,
-        tags: noteData.tags,
       });
     }
     setEditingNote(undefined);
@@ -283,6 +283,7 @@ export default function Dashboard() {
               setNoteDialogOpen(true);
             }}
             onDeleteNote={(id) => void handleDeleteNote(id)}
+            onSaveNote={handleSaveNote}
           />
         ) : (
           <TaskList
@@ -308,6 +309,7 @@ export default function Dashboard() {
               setSchedulingTask(task);
               setScheduleDialogOpen(true);
             }}
+            isLoading={isTasksLoading}
           />
         )}
       </div>

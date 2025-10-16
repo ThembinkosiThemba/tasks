@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   FileText,
@@ -7,12 +7,13 @@ import {
   Trash,
   Search,
   Calendar,
-  Tag,
   Eye,
+  ArrowLeft,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +36,7 @@ interface MeetingNotesProps {
   onAddNote: () => void;
   onEditNote: (note: MeetingNote) => void;
   onDeleteNote: (noteId: Id<"meetingNotes">) => void;
+  onSaveNote: (noteData: Partial<MeetingNote>) => void;
 }
 
 interface NoteCardProps {
@@ -59,8 +61,8 @@ function NoteCard({ note, onEdit, onDelete, onView }: NoteCardProps) {
   return (
     <div
       className={cn(
-        "group bg-card border border-border/50 rounded-lg p-5 transition-all duration-200",
-        "hover:border-primary/50 hover:shadow-md hover:shadow-primary/5",
+        "group bg-gradient-to-br from-card/80 to-card/60 border border-border/50 rounded-lg p-5 transition-all duration-200",
+        "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
         "animate-in fade-in-0 slide-in-from-bottom-2",
       )}
     >
@@ -109,20 +111,6 @@ function NoteCard({ note, onEdit, onDelete, onView }: NoteCardProps) {
               <Calendar className="h-3.5 w-3.5" />
               {formattedDate}
             </div>
-            {note.tags && note.tags.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                {note.tags.map((tag, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="text-xs px-2 py-0.5"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -132,27 +120,176 @@ function NoteCard({ note, onEdit, onDelete, onView }: NoteCardProps) {
 
 export function MeetingNotes({
   notes,
-  onAddNote,
-  onEditNote,
+  // onAddNote,
+  // onEditNote,
   onDeleteNote,
+  onSaveNote,
 }: MeetingNotesProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingNote, setViewingNote] = useState<MeetingNote | null>(null);
+  const [editingNote, setEditingNote] = useState<MeetingNote | null>(null);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+
+  // Editor state
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleCreateNote = () => {
+    setIsCreatingNew(true);
+    setEditingNote(null);
+    setTitle("");
+    setContent("");
+    setLastSaved(null);
+  };
+
+  const handleEditNoteClick = (note: MeetingNote) => {
+    setIsCreatingNew(false);
+    setEditingNote(note);
+    setTitle(note.title);
+    setContent(note.content);
+    setLastSaved(null);
+  };
+
+  // Auto-save functionality with debouncing
+  const autoSave = () => {
+    if (!title.trim() && !content.trim()) return;
+
+    setIsSaving(true);
+    const noteData: Partial<MeetingNote> = {
+      title: title || "Untitled",
+      content,
+      date: new Date().toISOString().split("T")[0],
+    };
+
+    if (editingNote) {
+      onSaveNote({ ...noteData, _id: editingNote._id } as any);
+    } else {
+      onSaveNote(noteData);
+    }
+
+    setLastSaved(new Date());
+    setTimeout(() => setIsSaving(false), 500);
+  };
+
+  // Trigger auto-save when title or content changes
+  useEffect(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      if (title.trim() || content.trim()) {
+        autoSave();
+      }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [title, content]);
+
+  const handleCancel = () => {
+    setIsCreatingNew(false);
+    setEditingNote(null);
+    setTitle("");
+    setContent("");
+    setLastSaved(null);
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+  };
 
   const filteredNotes = notes
     .filter((note) => {
       const matchesSearch =
         note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.tags?.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
+        note.content.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesSearch;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Show editor if creating or editing
+  const showEditor = isCreatingNew || editingNote !== null;
+
+  // Get formatted save status
+  const getSaveStatus = () => {
+    if (isSaving) return "Saving...";
+    if (lastSaved) {
+      const now = new Date();
+      const diff = now.getTime() - lastSaved.getTime();
+      if (diff < 60000) return "Saved just now";
+      if (diff < 3600000) return `Saved ${Math.floor(diff / 60000)}m ago`;
+      return "Saved";
+    }
+    return "Not saved";
+  };
+
+  // Full-window editor view
+  if (showEditor) {
+    return (
+      <div className="flex-1 overflow-auto bg-dark">
+        <div className="h-full max-w-[900px] mx-auto flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4 p-4 md:p-6 border-b border-border/50 sticky top-0 bg-dark/95 backdrop-blur-sm z-10">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <div className="flex items-center gap-3">
+              {isSaving ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                  Saving...
+                </div>
+              ) : lastSaved ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                  {getSaveStatus()}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Type to start auto-saving
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Editor */}
+          <div className="flex-1 p-6 md:p-12 space-y-6">
+            {/* Title Input */}
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Untitled"
+              className="text-4xl font-bold border-none bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40"
+            />
+
+            {/* Content Textarea */}
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Start writing your notes... (Markdown supported)"
+              className="min-h-[500px] resize-none border-none bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base leading-relaxed font-normal"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // List view
   return (
-    <div className="flex-1 overflow-auto bg-background">
+    <div className="flex-1 overflow-auto bg-dark">
       <div className="p-4 md:p-8 space-y-6 max-w-[1400px] mx-auto">
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4">
@@ -165,7 +302,7 @@ export function MeetingNotes({
               </p>
             </div>
             <Button
-              onClick={onAddNote}
+              onClick={handleCreateNote}
               size="lg"
               className="h-10 md:h-11 shadow-lg shadow-primary/20 shrink-0"
             >
@@ -205,7 +342,7 @@ export function MeetingNotes({
                 <NoteCard
                   key={note._id}
                   note={note}
-                  onEdit={() => onEditNote(note)}
+                  onEdit={() => handleEditNoteClick(note)}
                   onDelete={() => onDeleteNote(note._id)}
                   onView={() => setViewingNote(note)}
                 />
@@ -223,25 +360,14 @@ export function MeetingNotes({
         <DialogContent className="bg-dark max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">{viewingNote?.title}</DialogTitle>
-            <div className="flex items-center gap-4 pt-2">
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                {viewingNote?.date &&
-                  new Date(viewingNote.date).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-              </div>
-              {viewingNote?.tags && viewingNote.tags.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  {viewingNote.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground pt-2">
+              <Calendar className="h-4 w-4" />
+              {viewingNote?.date &&
+                new Date(viewingNote.date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
             </div>
           </DialogHeader>
           <div className="prose prose-invert max-w-none mt-4">
@@ -252,7 +378,7 @@ export function MeetingNotes({
               variant="outline"
               onClick={() => {
                 if (viewingNote) {
-                  onEditNote(viewingNote);
+                  handleEditNoteClick(viewingNote);
                   setViewingNote(null);
                 }
               }}

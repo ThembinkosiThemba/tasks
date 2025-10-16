@@ -34,6 +34,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +57,7 @@ interface TaskListProps {
     status: "todo" | "in-progress" | "done",
   ) => void;
   onScheduleTask: (task: Task) => void;
+  isLoading?: boolean;
 }
 
 interface TaskCardProps {
@@ -146,7 +148,7 @@ function TaskCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group bg-card border border-border/50 rounded-lg p-4 transition-all duration-200",
+        "group bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-lg p-4 transition-all duration-200",
         "hover:border-primary/50 hover:shadow-md hover:shadow-primary/5",
         (isDragging || isSortableDragging) && "opacity-50",
         !isDragging && "animate-in fade-in-0 slide-in-from-bottom-2",
@@ -273,6 +275,25 @@ function TaskCard({
   );
 }
 
+function TaskCardSkeleton() {
+  return (
+    <div className="bg-card border border-border/50 rounded-lg p-4 animate-in fade-in-0 slide-in-from-bottom-2">
+      <div className="flex items-start gap-3">
+        <Skeleton className="h-5 w-5 rounded-full mt-1 shrink-0" />
+        <div className="flex-1 min-w-0 space-y-3">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-6 w-24 rounded-md" />
+            <Skeleton className="h-6 w-16 rounded-md" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DroppableColumn({
   status,
   tasks,
@@ -283,6 +304,7 @@ function DroppableColumn({
   onSchedule,
   onToggleStatus,
   onUpdateTaskStatus,
+  isLoading = false,
 }: {
   status: "todo" | "in-progress" | "done";
   tasks: Task[];
@@ -296,6 +318,7 @@ function DroppableColumn({
     taskId: Id<"tasks">,
     status: "todo" | "in-progress" | "done",
   ) => void;
+  isLoading?: boolean;
 }) {
   const getProject = (projectId?: string) =>
     projects.find((p) => p._id === projectId);
@@ -315,7 +338,7 @@ function DroppableColumn({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-1 pb-4 sticky top-0 bg-background z-10">
+      <div className="flex items-center gap-3 px-1 pb-4 sticky top-0 z-10">
         <div className={cn("h-2 w-2 rounded-full", config.color)} />
         <h3 className="font-semibold text-base">{config.label}</h3>
         <Badge variant="secondary" className="ml-auto">
@@ -328,7 +351,14 @@ function DroppableColumn({
         strategy={verticalListSortingStrategy}
       >
         <div className="flex-1 space-y-3 min-h-[200px]">
-          {tasks.length === 0 ? (
+          {isLoading ? (
+            // Show skeleton cards while loading
+            <>
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
+            </>
+          ) : tasks.length === 0 ? (
             <div className="bg-card/30 border-2 border-dashed border-border/50 rounded-lg p-8 text-center">
               <Icon className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">Drop tasks here</p>
@@ -368,6 +398,7 @@ export function TaskList({
   onDeleteTask,
   onUpdateTaskStatus,
   onScheduleTask,
+  isLoading = false,
 }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState<string | null>(null);
@@ -458,7 +489,7 @@ export function TaskList({
     : undefined;
 
   return (
-    <div className="flex-1 overflow-auto bg-background">
+    <div className="flex-1 overflow-auto bg-dark dark">
       <div className="p-4 md:p-8 space-y-6 max-w-[1600px] mx-auto">
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4">
@@ -537,7 +568,10 @@ export function TaskList({
                       : "All Projects"}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto">
+                <DropdownMenuContent
+                  align="end"
+                  className="max-h-[300px] overflow-y-auto"
+                >
                   <DropdownMenuItem onClick={() => setFilterProject(null)}>
                     All Projects
                   </DropdownMenuItem>
@@ -584,7 +618,7 @@ export function TaskList({
           </div>
 
           {totalTasks > 0 && (
-            <div className="bg-card border border-border/50 rounded-xl p-4">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Overall Progress</span>
                 <span className="text-sm text-muted-foreground">
@@ -626,6 +660,7 @@ export function TaskList({
                   const newStatus = task.status === "done" ? "todo" : "done";
                   onUpdateTaskStatus(taskId, newStatus);
                 }}
+                isLoading={isLoading}
               />
             ))}
           </div>
