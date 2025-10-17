@@ -14,7 +14,7 @@ export const list = query({
       name: v.string(),
       color: v.string(),
       userId: v.id("users"),
-    })
+    }),
   ),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
@@ -44,7 +44,7 @@ export const get = query({
       color: v.string(),
       userId: v.id("users"),
     }),
-    v.null()
+    v.null(),
   ),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);

@@ -21,13 +21,10 @@ export default defineSchema({
     status: v.union(
       v.literal("todo"),
       v.literal("in-progress"),
-      v.literal("done")
+      v.literal("review"),
+      v.literal("done"),
     ),
-    priority: v.union(
-      v.literal("low"),
-      v.literal("medium"),
-      v.literal("high")
-    ),
+    priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
     completedAt: v.optional(v.number()),
     reminderDate: v.optional(v.number()),
     userId: v.id("users"),

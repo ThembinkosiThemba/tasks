@@ -15,7 +15,7 @@ import { MeetingNoteDialog } from "@/components/meeting-note-dialog";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileHeader } from "@/components/mobile-header";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
-import type { Task, MeetingNote } from "@/types";
+import type { Task, MeetingNote, TaskStatus } from "@/types";
 
 export default function Dashboard() {
   const { signOut } = useAuthActions();
@@ -153,7 +153,7 @@ export default function Dashboard() {
 
   const handleUpdateTaskStatus = async (
     taskId: Id<"tasks">,
-    newStatus: "todo" | "in-progress" | "done",
+    newStatus: TaskStatus,
   ) => {
     const task = tasks.find((t) => t._id === taskId);
     if (!task) return;

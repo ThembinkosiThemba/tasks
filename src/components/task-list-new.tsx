@@ -30,6 +30,7 @@ import {
   ChevronRight,
   ChevronLeft,
   ArrowUpDown,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +42,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Task, Project } from "@/types";
+import type { Task, Project, TaskStatus } from "@/types";
 import type { Id } from "../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 
@@ -52,10 +53,7 @@ interface TaskListProps {
   onViewTask: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: Id<"tasks">) => void;
-  onUpdateTaskStatus: (
-    taskId: Id<"tasks">,
-    status: "todo" | "in-progress" | "done",
-  ) => void;
+  onUpdateTaskStatus: (taskId: Id<"tasks">, status: TaskStatus) => void;
   onScheduleTask: (task: Task) => void;
   onViewChange?: (view: string) => void;
   isLoading?: boolean;
@@ -69,7 +67,7 @@ interface TaskCardProps {
   onDelete: () => void;
   onSchedule: () => void;
   onToggleStatus: () => void;
-  onUpdateStatus: (newStatus: "todo" | "in-progress" | "done") => void;
+  onUpdateStatus: (newStatus: TaskStatus) => void;
   isDragging?: boolean;
 }
 
@@ -118,6 +116,8 @@ function TaskCard({
       case "todo":
         return "in-progress";
       case "in-progress":
+        return "review";
+      case "review":
         return "done";
       case "done":
         return null;
@@ -134,8 +134,10 @@ function TaskCard({
         return null;
       case "in-progress":
         return "todo";
-      case "done":
+      case "review":
         return "in-progress";
+      case "done":
+        return "review";
       default:
         return null;
     }
@@ -253,7 +255,7 @@ function TaskCard({
             <DropdownMenuContent align="end" className="bg-dark dark">
               <DropdownMenuItem onClick={onEdit}>
                 <Pencil className="mr-2 h-4 w-4" />
-                Edit task
+                Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onSchedule}>
                 <Clock className="mr-2 h-4 w-4" />
@@ -261,7 +263,7 @@ function TaskCard({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onDelete} className="text-destructive">
                 <Trash className="mr-2 h-4 w-4" />
-                Delete task
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -301,9 +303,10 @@ function DroppableColumn({
   onToggleStatus,
   onUpdateTaskStatus,
   onSortChange,
+  onFilterPriorityChange,
   isLoading = false,
 }: {
-  status: "todo" | "in-progress" | "done";
+  status: TaskStatus;
   tasks: Task[];
   projects: Project[];
   onView: (task: Task) => void;
@@ -311,12 +314,11 @@ function DroppableColumn({
   onDelete: (taskId: Id<"tasks">) => void;
   onSchedule: (task: Task) => void;
   onToggleStatus: (taskId: Id<"tasks">) => void;
-  onUpdateTaskStatus: (
-    taskId: Id<"tasks">,
-    status: "todo" | "in-progress" | "done",
-  ) => void;
+  onUpdateTaskStatus: (taskId: Id<"tasks">, status: TaskStatus) => void;
   sortOrder: "newest" | "oldest";
   onSortChange: (order: "newest" | "oldest") => void;
+  filterPriority: string | null;
+  onFilterPriorityChange: (priority: string | null) => void;
   isLoading?: boolean;
 }) {
   const getProject = (projectId?: string) =>
@@ -328,6 +330,11 @@ function DroppableColumn({
       label: "In Progress",
       color: "bg-yellow-500",
       icon: Clock,
+    },
+    review: {
+      label: "Review",
+      color: "bg-orange-500",
+      icon: Check,
     },
     done: { label: "Done", color: "bg-green-500", icon: CheckCircle2 },
   };
@@ -341,26 +348,56 @@ function DroppableColumn({
         <div className={cn("h-2 w-2 rounded-full", config.color)} />
         <h3 className="font-semibold text-base">{config.label}</h3>
         <Badge variant="secondary">{tasks.length}</Badge>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 ml-auto"
-              title="Sort column"
-            >
-              <ArrowUpDown className="h-3.5 w-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onSortChange("newest")}>
-              Newest First
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSortChange("oldest")}>
-              Oldest First
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="ml-auto flex items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                title="Filter by priority"
+              >
+                <Filter className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onFilterPriorityChange(null)}>
+                All Priorities
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onFilterPriorityChange("high")}>
+                High
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onFilterPriorityChange("medium")}
+              >
+                Medium
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onFilterPriorityChange("low")}>
+                Low
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                title="Sort column"
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSortChange("newest")}>
+                Newest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange("oldest")}>
+                Oldest First
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <SortableContext
@@ -369,7 +406,6 @@ function DroppableColumn({
       >
         <div className="flex-1 space-y-3 min-h-[200px]">
           {isLoading ? (
-            // Show skeleton cards while loading
             <>
               <TaskCardSkeleton />
               <TaskCardSkeleton />
@@ -419,16 +455,28 @@ export function TaskList({
   isLoading = false,
 }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPriority, setFilterPriority] = useState<string | null>(null);
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [columnSortBy, setColumnSortBy] = useState<{
     todo: "newest" | "oldest";
     "in-progress": "newest" | "oldest";
+    review: "newest" | "oldest";
     done: "newest" | "oldest";
   }>({
     todo: "newest",
     "in-progress": "newest",
+    review: "newest",
     done: "newest",
+  });
+  const [columnFilterPriority, setColumnFilterPriority] = useState<{
+    todo: string | null;
+    "in-progress": string | null;
+    review: string | null;
+    done: string | null;
+  }>({
+    todo: null,
+    "in-progress": null,
+    review: null,
+    done: null,
   });
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -444,17 +492,23 @@ export function TaskList({
     const matchesSearch =
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPriority = !filterPriority || task.priority === filterPriority;
     const matchesProject =
       !filterProject ||
       (filterProject === "none"
         ? !task.projectId
         : task.projectId === filterProject);
-    return matchesSearch && matchesPriority && matchesProject;
+    return matchesSearch && matchesProject;
   });
 
-  const sortTasks = (tasks: Task[], sortOrder: "newest" | "oldest"): Task[] => {
-    return [...tasks].sort((a, b) => {
+  const filterAndSortTasks = (
+    tasks: Task[],
+    sortOrder: "newest" | "oldest",
+    priority: string | null,
+  ): Task[] => {
+    const filtered = priority
+      ? tasks.filter((t) => t.priority === priority)
+      : tasks;
+    return [...filtered].sort((a, b) => {
       if (sortOrder === "newest") {
         return b._creationTime - a._creationTime;
       } else {
@@ -464,17 +518,25 @@ export function TaskList({
   };
 
   const groupedTasks = {
-    todo: sortTasks(
+    todo: filterAndSortTasks(
       filteredTasks.filter((t) => t.status === "todo"),
       columnSortBy.todo,
+      columnFilterPriority.todo,
     ),
-    "in-progress": sortTasks(
+    "in-progress": filterAndSortTasks(
       filteredTasks.filter((t) => t.status === "in-progress"),
       columnSortBy["in-progress"],
+      columnFilterPriority["in-progress"],
     ),
-    done: sortTasks(
+    review: filterAndSortTasks(
+      filteredTasks.filter((t) => t.status === "review"),
+      columnSortBy.review,
+      columnFilterPriority.review,
+    ),
+    done: filterAndSortTasks(
       filteredTasks.filter((t) => t.status === "done"),
       columnSortBy.done,
+      columnFilterPriority.done,
     ),
   };
 
@@ -560,35 +622,7 @@ export function TaskList({
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-10 md:h-11 bg-card border-border/50"
-                  >
-                    <Filter className="mr-2 h-4 w-4" />
-                    {filterPriority
-                      ? `Priority: ${filterPriority}`
-                      : "All Priorities"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setFilterPriority(null)}>
-                    All Priorities
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterPriority("high")}>
-                    High Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterPriority("medium")}>
-                    Medium Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterPriority("low")}>
-                    Low Priority
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap"></div>
           </div>
 
           {totalTasks > 0 && (
@@ -647,16 +681,16 @@ export function TaskList({
                     filterProject === project._id ? "default" : "outline"
                   }
                   size="sm"
-                  className="h-8 rounded-full"
+                  className={`h-8 rounded-full`}
                   onClick={() => {
                     setFilterProject(project._id);
                     if (onViewChange) onViewChange("all");
                   }}
                 >
-                  <div
+                  {/* <div
                     className="h-2 w-2 rounded-full mr-2"
                     style={{ backgroundColor: project.color }}
-                  />
+                  /> */}
                   {project.name}
                 </Button>
               ))}
@@ -670,31 +704,40 @@ export function TaskList({
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {(["todo", "in-progress", "done"] as const).map((status) => (
-              <DroppableColumn
-                key={status}
-                status={status}
-                tasks={groupedTasks[status]}
-                projects={projects}
-                onView={onViewTask}
-                onEdit={onEditTask}
-                onDelete={onDeleteTask}
-                onSchedule={onScheduleTask}
-                onUpdateTaskStatus={onUpdateTaskStatus}
-                sortOrder={columnSortBy[status]}
-                onSortChange={(order) =>
-                  setColumnSortBy((prev) => ({ ...prev, [status]: order }))
-                }
-                onToggleStatus={(taskId) => {
-                  const task = tasks.find((t) => t._id === taskId);
-                  if (!task) return;
-                  const newStatus = task.status === "done" ? "todo" : "done";
-                  onUpdateTaskStatus(taskId, newStatus);
-                }}
-                isLoading={isLoading}
-              />
-            ))}
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            {(["todo", "in-progress", "review", "done"] as const).map(
+              (status) => (
+                <DroppableColumn
+                  key={status}
+                  status={status}
+                  tasks={groupedTasks[status]}
+                  projects={projects}
+                  onView={onViewTask}
+                  onEdit={onEditTask}
+                  onDelete={onDeleteTask}
+                  onSchedule={onScheduleTask}
+                  onUpdateTaskStatus={onUpdateTaskStatus}
+                  sortOrder={columnSortBy[status]}
+                  onSortChange={(order) =>
+                    setColumnSortBy((prev) => ({ ...prev, [status]: order }))
+                  }
+                  filterPriority={columnFilterPriority[status]}
+                  onFilterPriorityChange={(priority) =>
+                    setColumnFilterPriority((prev) => ({
+                      ...prev,
+                      [status]: priority,
+                    }))
+                  }
+                  onToggleStatus={(taskId) => {
+                    const task = tasks.find((t) => t._id === taskId);
+                    if (!task) return;
+                    const newStatus = task.status === "done" ? "todo" : "done";
+                    onUpdateTaskStatus(taskId, newStatus);
+                  }}
+                  isLoading={isLoading}
+                />
+              ),
+            )}
           </div>
 
           <DragOverlay>

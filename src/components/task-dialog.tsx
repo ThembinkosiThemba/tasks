@@ -52,7 +52,7 @@ export function TaskDialog({
       setReminderDate(
         task.reminderDate
           ? new Date(task.reminderDate).toISOString().slice(0, 16)
-          : ""
+          : "",
       );
     } else {
       setTitle("");
@@ -120,6 +120,7 @@ export function TaskDialog({
                 <SelectContent className="">
                   <SelectItem value="todo">To Do</SelectItem>
                   <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="review">Review</SelectItem>
                   <SelectItem value="done">Done</SelectItem>
                 </SelectContent>
               </Select>

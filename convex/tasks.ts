@@ -8,7 +8,12 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 export const list = query({
   args: {
     status: v.optional(
-      v.union(v.literal("todo"), v.literal("in-progress"), v.literal("done"))
+      v.union(
+        v.literal("todo"),
+        v.literal("in-progress"),
+        v.literal("review"),
+        v.literal("done"),
+      ),
     ),
     projectId: v.optional(v.id("projects")),
   },
@@ -22,17 +27,18 @@ export const list = query({
       status: v.union(
         v.literal("todo"),
         v.literal("in-progress"),
-        v.literal("done")
+        v.literal("review"),
+        v.literal("done"),
       ),
       priority: v.union(
         v.literal("low"),
         v.literal("medium"),
-        v.literal("high")
+        v.literal("high"),
       ),
       completedAt: v.optional(v.number()),
       reminderDate: v.optional(v.number()),
       userId: v.id("users"),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -49,7 +55,7 @@ export const list = query({
       query = ctx.db
         .query("tasks")
         .withIndex("by_user_and_status", (q) =>
-          q.eq("userId", userId).eq("status", args.status!)
+          q.eq("userId", userId).eq("status", args.status!),
         );
     }
 
@@ -79,18 +85,19 @@ export const get = query({
       status: v.union(
         v.literal("todo"),
         v.literal("in-progress"),
-        v.literal("done")
+        v.literal("review"),
+        v.literal("done"),
       ),
       priority: v.union(
         v.literal("low"),
         v.literal("medium"),
-        v.literal("high")
+        v.literal("high"),
       ),
       completedAt: v.optional(v.number()),
       reminderDate: v.optional(v.number()),
       userId: v.id("users"),
     }),
-    v.null()
+    v.null(),
   ),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -119,8 +126,9 @@ export const create = mutation({
     projectId: v.optional(v.id("projects")),
     status: v.union(
       v.literal("todo"),
+      v.literal("review"),
       v.literal("in-progress"),
-      v.literal("done")
+      v.literal("done"),
     ),
     priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
     reminderDate: v.optional(v.number()),
@@ -166,7 +174,8 @@ export const update = mutation({
     status: v.union(
       v.literal("todo"),
       v.literal("in-progress"),
-      v.literal("done")
+      v.literal("review"),
+      v.literal("done"),
     ),
     priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
     reminderDate: v.optional(v.number()),

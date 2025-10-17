@@ -8,7 +8,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash, Clock, Circle, CheckCircle2 } from "lucide-react";
+import {
+  Pencil,
+  Trash,
+  Clock,
+  Circle,
+  CheckCircle2,
+  Check,
+} from "lucide-react";
 import type { Task, Project } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +59,12 @@ export function TaskViewDialog({
         return { label: "To Do", color: "bg-blue-500", icon: Circle };
       case "in-progress":
         return { label: "In Progress", color: "bg-yellow-500", icon: Clock };
+      case "review":
+        return {
+          label: "Review",
+          color: "bg-orange-500",
+          icon: Check,
+        };
       case "done":
         return { label: "Done", color: "bg-green-500", icon: CheckCircle2 };
     }

@@ -65,7 +65,8 @@ export function Sidebar({
   };
 
   const sidebarContent = (
-    <div className="bg-dark">
+    <div className="flex flex-col h-full bg-dark">
+      {/* Header */}
       <div className="p-6 border-b border-border/50">
         <div
           className={cn(
@@ -85,177 +86,167 @@ export function Sidebar({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-1">
-          <Button
-            variant={selectedView === "all" ? "secondary" : "ghost"}
-            className={cn(
-              "w-full h-10 font-medium transition-all hover:translate-x-1",
-              collapsed ? "justify-center px-0" : "justify-start",
-            )}
-            onClick={() => handleViewChange("all")}
-            title={collapsed ? "All Tasks" : undefined}
-          >
-            <LayoutGrid className={cn("h-4 w-4", !collapsed && "mr-3")} />
-            {!collapsed && "All Tasks"}
-          </Button>
+      {/* Navigation */}
+      <div className="p-4 space-y-1">
+        <Button
+          variant={selectedView === "all" ? "secondary" : "ghost"}
+          className={cn(
+            "w-full h-10 font-medium transition-all hover:translate-x-1",
+            collapsed ? "justify-center px-0" : "justify-start",
+          )}
+          onClick={() => handleViewChange("all")}
+          title={collapsed ? "All Tasks" : undefined}
+        >
+          <LayoutGrid className={cn("h-4 w-4", !collapsed && "mr-3")} />
+          {!collapsed && "All Tasks"}
+        </Button>
 
-          <Button
-            variant={selectedView === "daily" ? "secondary" : "ghost"}
-            className={cn(
-              "w-full h-10 font-medium transition-all hover:translate-x-1",
-              collapsed ? "justify-center px-0" : "justify-start",
-            )}
-            onClick={() => handleViewChange("daily")}
-            title={collapsed ? "Daily Schedule" : undefined}
-          >
-            <Calendar className={cn("h-4 w-4", !collapsed && "mr-3")} />
-            {!collapsed && "Daily Schedule"}
-          </Button>
+        <Button
+          variant={selectedView === "daily" ? "secondary" : "ghost"}
+          className={cn(
+            "w-full h-10 font-medium transition-all hover:translate-x-1",
+            collapsed ? "justify-center px-0" : "justify-start",
+          )}
+          onClick={() => handleViewChange("daily")}
+          title={collapsed ? "Daily Schedule" : undefined}
+        >
+          <Calendar className={cn("h-4 w-4", !collapsed && "mr-3")} />
+          {!collapsed && "Daily Schedule"}
+        </Button>
 
-          <Button
-            disabled
-            variant={selectedView === "notes" ? "secondary" : "ghost"}
-            className={cn(
-              "w-full h-10 font-medium transition-all hover:translate-x-1",
-              collapsed ? "justify-center px-0" : "justify-start",
-            )}
-            onClick={() => handleViewChange("notes")}
-            title={collapsed ? "Notes" : undefined}
-          >
-            <FileText className={cn("h-4 w-4", !collapsed && "mr-3")} />
-            {!collapsed && "Notes"}
-          </Button>
-        </div>
+        <Button
+          disabled
+          variant={selectedView === "notes" ? "secondary" : "ghost"}
+          className={cn(
+            "w-full h-10 font-medium transition-all hover:translate-x-1",
+            collapsed ? "justify-center px-0" : "justify-start",
+          )}
+          onClick={() => handleViewChange("notes")}
+          title={collapsed ? "Notes" : undefined}
+        >
+          <FileText className={cn("h-4 w-4", !collapsed && "mr-3")} />
+          {!collapsed && "Notes"}
+        </Button>
+      </div>
 
-        {!collapsed && (
-          <>
-            <div className="px-4 pt-6 pb-3">
-              <div className="flex items-center justify-between mb-3">
-                <button
-                  onClick={() => setProjectsExpanded(!projectsExpanded)}
-                  className="flex items-center gap-2 text-sm font-semibold text-foreground/90 hover:text-primary transition-colors"
-                >
-                  {projectsExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                  <span>Projects</span>
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                  onClick={onAddProject}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {projectsExpanded && (
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search projects..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-9 pl-9 bg-background/50 border-border/50 text-sm"
-                  />
+      {/* Scrollable Projects Section */}
+      <div className="relative flex-1 overflow-hidden">
+        <ScrollArea className="h-full px-4">
+          {!collapsed && (
+            <>
+              <div className="pt-4 pb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    onClick={() => setProjectsExpanded(!projectsExpanded)}
+                    className="flex items-center gap-2 text-sm font-semibold text-foreground/90 hover:text-primary transition-colors"
+                  >
+                    {projectsExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                    <span>Projects</span>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                    onClick={onAddProject}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
-            </div>
 
-            {projectsExpanded && (
-              <div className="px-4 pb-4">
-                <div className="space-y-1">
-                  {filteredProjects.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      {searchQuery ? "No projects found" : "No projects yet"}
+                {projectsExpanded && (
+                  <>
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search projects..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-9 pl-9 bg-background/50 border-border/50 text-sm"
+                      />
                     </div>
-                  ) : (
-                    filteredProjects.map((project) => (
-                      <div
-                        key={project._id}
-                        className="group/item flex items-center gap-1"
-                      >
-                        <Button
-                          variant={
-                            selectedView === project._id ? "secondary" : "ghost"
-                          }
-                          className="flex-1 justify-start h-10 font-medium transition-all hover:translate-x-1 group"
-                          onClick={() => handleViewChange(project._id)}
-                        >
+
+                    <div className="space-y-1 pb-6">
+                      {filteredProjects.length === 0 ? (
+                        <div className="text-center py-8 text-sm text-muted-foreground">
+                          {searchQuery
+                            ? "No projects found"
+                            : "No projects yet"}
+                        </div>
+                      ) : (
+                        filteredProjects.map((project) => (
                           <div
-                            className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
-                            style={{
-                              backgroundColor: project.color,
-                              boxShadow: `0 0 0 2px ${project.color}40`,
-                            }}
-                          />
-                          <span className="truncate">{project.name}</span>
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                            key={project._id}
+                            className="group/item flex items-center gap-1"
+                          >
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0"
+                              variant={
+                                selectedView === project._id
+                                  ? "secondary"
+                                  : "ghost"
+                              }
+                              className="flex-1 justify-start h-10 font-medium transition-all hover:translate-x-1 group"
+                              onClick={() => handleViewChange(project._id)}
                             >
-                              <MoreHorizontal className="h-4 w-4" />
+                              <div
+                                className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
+                                style={{
+                                  backgroundColor: project.color,
+                                  boxShadow: `0 0 0 2px ${project.color}40`,
+                                }}
+                              />
+                              <span className="truncate">{project.name}</span>
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-dark dark">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteProject(project._id);
-                                if (selectedView === project._id) {
-                                  onViewChange("all");
-                                }
-                              }}
-                              className="text-destructive"
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              Delete project
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    ))
-                  )}
-                </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                className="bg-dark dark"
+                              >
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteProject(project._id);
+                                    if (selectedView === project._id) {
+                                      onViewChange("all");
+                                    }
+                                  }}
+                                  className="text-destructive"
+                                >
+                                  <Trash className="mr-2 h-4 w-4" />
+                                  Delete project
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-          </>
-        )}
+            </>
+          )}
+        </ScrollArea>
 
-        {collapsed && projects.length > 0 && (
-          <div className="px-2 py-4">
-            <div className="space-y-2">
-              {projects.slice(0, 5).map((project) => (
-                <Button
-                  key={project._id}
-                  variant={selectedView === project._id ? "secondary" : "ghost"}
-                  className="w-full justify-center h-10 px-0 transition-all hover:scale-110"
-                  onClick={() => handleViewChange(project._id)}
-                  title={project.name}
-                >
-                  <div
-                    className="h-4 w-4 rounded-full ring-2 ring-offset-2 ring-offset-card"
-                    style={{
-                      backgroundColor: project.color,
-                      boxShadow: `0 0 0 2px ${project.color}40`,
-                    }}
-                  />
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-      </ScrollArea>
+        {/* Scroll shadows (optional) */}
+        <div className="pointer-events-none absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-dark to-transparent" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-dark to-transparent" />
+      </div>
 
-      <div className="p-4 border-none border-border/50 space-y-1">
+      {/* Footer */}
+      <div className="p-4 border-t border-border/50">
         <Button
           variant="ghost"
           className={cn(
@@ -286,17 +277,14 @@ export function Sidebar({
       <div
         className={cn(
           "border-r border-border bg-dark backdrop-blur-sm flex flex-col h-screen transition-all duration-300 relative",
-          // Desktop behavior
           "hidden lg:flex",
           collapsed ? "w-20" : "w-56",
-          // Mobile behavior
           "lg:relative lg:translate-x-0",
           mobileOpen
             ? "fixed inset-y-0 left-0 z-50 flex w-72 translate-x-0"
             : "fixed -translate-x-full",
         )}
       >
-        {/* Mobile close button */}
         {mobileOpen && (
           <Button
             variant="ghost"
@@ -310,7 +298,7 @@ export function Sidebar({
 
         {sidebarContent}
 
-        {/* Desktop collapse toggle */}
+        {/* Collapse Toggle (desktop only) */}
         {onToggleCollapse && (
           <Button
             variant="ghost"
@@ -319,9 +307,9 @@ export function Sidebar({
             onClick={onToggleCollapse}
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-6 w-6" />
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-6 w-6" />
             )}
           </Button>
         )}
