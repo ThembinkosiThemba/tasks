@@ -124,7 +124,7 @@ export const update = mutation({
 });
 
 /**
- * Delete a project
+ * Delete a project and remove it from all associated tasks
  */
 export const remove = mutation({
   args: { projectId: v.id("projects") },
@@ -145,6 +145,20 @@ export const remove = mutation({
       throw new Error("Unauthorized");
     }
 
+    // Find all tasks with this project and remove the project reference
+    const tasksWithProject = await ctx.db
+      .query("tasks")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+
+    // Update all tasks to have no project
+    for (const task of tasksWithProject) {
+      await ctx.db.patch(task._id, {
+        projectId: undefined,
+      });
+    }
+
+    // Delete the project
     await ctx.db.delete(args.projectId);
 
     return null;

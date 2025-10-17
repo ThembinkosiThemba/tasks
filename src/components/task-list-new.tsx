@@ -57,6 +57,7 @@ interface TaskListProps {
     status: "todo" | "in-progress" | "done",
   ) => void;
   onScheduleTask: (task: Task) => void;
+  onViewChange?: (view: string) => void;
   isLoading?: boolean;
 }
 
@@ -213,8 +214,8 @@ function TaskCard({
           </div>
         </div>
 
-        {/* Quick status change arrows */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        {/* Quick status change arrows and menu */}
+        <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           {prevStatus && (
             <Button
               variant="ghost"
@@ -243,33 +244,28 @@ function TaskCard({
               <ChevronRight className="h-4 w-4" />
             </Button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-dark dark">
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit task
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onSchedule}>
+                <Clock className="mr-2 h-4 w-4" />
+                Schedule
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                <Trash className="mr-2 h-4 w-4" />
+                Delete task
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-dark dark">
-            <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit task
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onSchedule}>
-              <Clock className="mr-2 h-4 w-4" />
-              Schedule
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-destructive">
-              <Trash className="mr-2 h-4 w-4" />
-              Delete task
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
   );
@@ -304,6 +300,7 @@ function DroppableColumn({
   onSchedule,
   onToggleStatus,
   onUpdateTaskStatus,
+  onSortChange,
   isLoading = false,
 }: {
   status: "todo" | "in-progress" | "done";
@@ -318,6 +315,8 @@ function DroppableColumn({
     taskId: Id<"tasks">,
     status: "todo" | "in-progress" | "done",
   ) => void;
+  sortOrder: "newest" | "oldest";
+  onSortChange: (order: "newest" | "oldest") => void;
   isLoading?: boolean;
 }) {
   const getProject = (projectId?: string) =>
@@ -338,12 +337,30 @@ function DroppableColumn({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-1 pb-4 sticky top-0 z-10">
+      <div className="flex items-center gap-2 px-1 pb-4 sticky top-0 z-10">
         <div className={cn("h-2 w-2 rounded-full", config.color)} />
         <h3 className="font-semibold text-base">{config.label}</h3>
-        <Badge variant="secondary" className="ml-auto">
-          {tasks.length}
-        </Badge>
+        <Badge variant="secondary">{tasks.length}</Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 ml-auto"
+              title="Sort column"
+            >
+              <ArrowUpDown className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onSortChange("newest")}>
+              Newest First
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onSortChange("oldest")}>
+              Oldest First
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <SortableContext
@@ -398,12 +415,21 @@ export function TaskList({
   onDeleteTask,
   onUpdateTaskStatus,
   onScheduleTask,
+  onViewChange,
   isLoading = false,
 }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState<string | null>(null);
   const [filterProject, setFilterProject] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
+  const [columnSortBy, setColumnSortBy] = useState<{
+    todo: "newest" | "oldest";
+    "in-progress": "newest" | "oldest";
+    done: "newest" | "oldest";
+  }>({
+    todo: "newest",
+    "in-progress": "newest",
+    done: "newest",
+  });
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -414,32 +440,42 @@ export function TaskList({
     }),
   );
 
-  const filteredTasks = tasks
-    .filter((task) => {
-      const matchesSearch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesPriority =
-        !filterPriority || task.priority === filterPriority;
-      const matchesProject =
-        !filterProject ||
-        (filterProject === "none"
-          ? !task.projectId
-          : task.projectId === filterProject);
-      return matchesSearch && matchesPriority && matchesProject;
-    })
-    .sort((a, b) => {
-      if (sortBy === "newest") {
+  const filteredTasks = tasks.filter((task) => {
+    const matchesSearch =
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPriority = !filterPriority || task.priority === filterPriority;
+    const matchesProject =
+      !filterProject ||
+      (filterProject === "none"
+        ? !task.projectId
+        : task.projectId === filterProject);
+    return matchesSearch && matchesPriority && matchesProject;
+  });
+
+  const sortTasks = (tasks: Task[], sortOrder: "newest" | "oldest"): Task[] => {
+    return [...tasks].sort((a, b) => {
+      if (sortOrder === "newest") {
         return b._creationTime - a._creationTime;
       } else {
         return a._creationTime - b._creationTime;
       }
     });
+  };
 
   const groupedTasks = {
-    todo: filteredTasks.filter((t) => t.status === "todo"),
-    "in-progress": filteredTasks.filter((t) => t.status === "in-progress"),
-    done: filteredTasks.filter((t) => t.status === "done"),
+    todo: sortTasks(
+      filteredTasks.filter((t) => t.status === "todo"),
+      columnSortBy.todo,
+    ),
+    "in-progress": sortTasks(
+      filteredTasks.filter((t) => t.status === "in-progress"),
+      columnSortBy["in-progress"],
+    ),
+    done: sortTasks(
+      filteredTasks.filter((t) => t.status === "done"),
+      columnSortBy.done,
+    ),
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -552,68 +588,6 @@ export function TaskList({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-10 md:h-11 bg-card border-border/50"
-                  >
-                    <Filter className="mr-2 h-4 w-4" />
-                    {filterProject
-                      ? filterProject === "none"
-                        ? "No Project"
-                        : projects.find((p) => p._id === filterProject)?.name ||
-                          "Project"
-                      : "All Projects"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="max-h-[300px] overflow-y-auto"
-                >
-                  <DropdownMenuItem onClick={() => setFilterProject(null)}>
-                    All Projects
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterProject("none")}>
-                    No Project
-                  </DropdownMenuItem>
-                  {projects.map((project) => (
-                    <DropdownMenuItem
-                      key={project._id}
-                      onClick={() => setFilterProject(project._id)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: project.color }}
-                        />
-                        {project.name}
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-10 md:h-11 bg-card border-border/50"
-                  >
-                    <ArrowUpDown className="mr-2 h-4 w-4" />
-                    {sortBy === "newest" ? "Newest First" : "Oldest First"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setSortBy("newest")}>
-                    Newest First
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("oldest")}>
-                    Oldest First
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 
@@ -633,6 +607,60 @@ export function TaskList({
               </div>
             </div>
           )}
+
+          {/* Project Filter Pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant={filterProject === null ? "default" : "outline"}
+              size="sm"
+              className="h-8 rounded-full"
+              onClick={() => {
+                setFilterProject(null);
+                if (onViewChange) onViewChange("all");
+              }}
+            >
+              All
+            </Button>
+            <Button
+              variant={filterProject === "none" ? "default" : "outline"}
+              size="sm"
+              className="h-8 rounded-full"
+              onClick={() => {
+                setFilterProject("none");
+                if (onViewChange) onViewChange("all");
+              }}
+            >
+              No Project
+            </Button>
+            {projects
+              .map((project) => ({
+                project,
+                taskCount: tasks.filter((t) => t.projectId === project._id)
+                  .length,
+              }))
+              .filter(({ taskCount }) => taskCount > 0)
+              .sort((a, b) => b.taskCount - a.taskCount)
+              .map(({ project }) => (
+                <Button
+                  key={project._id}
+                  variant={
+                    filterProject === project._id ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="h-8 rounded-full"
+                  onClick={() => {
+                    setFilterProject(project._id);
+                    if (onViewChange) onViewChange("all");
+                  }}
+                >
+                  <div
+                    className="h-2 w-2 rounded-full mr-2"
+                    style={{ backgroundColor: project.color }}
+                  />
+                  {project.name}
+                </Button>
+              ))}
+          </div>
         </div>
 
         <DndContext
@@ -654,6 +682,10 @@ export function TaskList({
                 onDelete={onDeleteTask}
                 onSchedule={onScheduleTask}
                 onUpdateTaskStatus={onUpdateTaskStatus}
+                sortOrder={columnSortBy[status]}
+                onSortChange={(order) =>
+                  setColumnSortBy((prev) => ({ ...prev, [status]: order }))
+                }
                 onToggleStatus={(taskId) => {
                   const task = tasks.find((t) => t._id === taskId);
                   if (!task) return;

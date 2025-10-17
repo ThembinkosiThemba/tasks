@@ -32,6 +32,7 @@ export default function Dashboard() {
 
   // Convex mutations
   const createProject = useMutation(api.projects.create);
+  const deleteProject = useMutation(api.projects.remove);
   const createTask = useMutation(api.tasks.create);
   const updateTask = useMutation(api.tasks.update);
   const deleteTask = useMutation(api.tasks.remove);
@@ -116,6 +117,10 @@ export default function Dashboard() {
 
   const handleAddProject = async (name: string, color: string) => {
     await createProject({ name, color });
+  };
+
+  const handleDeleteProject = async (projectId: Id<"projects">) => {
+    await deleteProject({ projectId });
   };
 
   const handleSaveTask = async (taskData: Partial<Task>) => {
@@ -254,6 +259,7 @@ export default function Dashboard() {
           selectedView={selectedView}
           onViewChange={setSelectedView}
           onAddProject={() => setProjectDialogOpen(true)}
+          onDeleteProject={(id) => void handleDeleteProject(id)}
           onLogout={() => void signOut()}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -309,6 +315,7 @@ export default function Dashboard() {
               setSchedulingTask(task);
               setScheduleDialogOpen(true);
             }}
+            onViewChange={setSelectedView}
             isLoading={isTasksLoading}
           />
         )}

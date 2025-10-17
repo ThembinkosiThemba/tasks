@@ -10,11 +10,20 @@ import {
   ChevronDown,
   X,
   FileText,
+  MoreHorizontal,
+  Trash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Project } from "@/types";
+import type { Id } from "../../convex/_generated/dataModel";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +32,7 @@ interface SidebarProps {
   selectedView: string;
   onViewChange: (view: string) => void;
   onAddProject: () => void;
+  onDeleteProject: (projectId: Id<"projects">) => void;
   onLogout: () => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -35,6 +45,7 @@ export function Sidebar({
   selectedView,
   onViewChange,
   onAddProject,
+  onDeleteProject,
   onLogout,
   collapsed = false,
   onToggleCollapse,
@@ -164,23 +175,53 @@ export function Sidebar({
                     </div>
                   ) : (
                     filteredProjects.map((project) => (
-                      <Button
+                      <div
                         key={project._id}
-                        variant={
-                          selectedView === project._id ? "secondary" : "ghost"
-                        }
-                        className="w-full justify-start h-10 font-medium transition-all hover:translate-x-1 group"
-                        onClick={() => handleViewChange(project._id)}
+                        className="group/item flex items-center gap-1"
                       >
-                        <div
-                          className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
-                          style={{
-                            backgroundColor: project.color,
-                            boxShadow: `0 0 0 2px ${project.color}40`,
-                          }}
-                        />
-                        <span className="truncate">{project.name}</span>
-                      </Button>
+                        <Button
+                          variant={
+                            selectedView === project._id ? "secondary" : "ghost"
+                          }
+                          className="flex-1 justify-start h-10 font-medium transition-all hover:translate-x-1 group"
+                          onClick={() => handleViewChange(project._id)}
+                        >
+                          <div
+                            className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"
+                            style={{
+                              backgroundColor: project.color,
+                              boxShadow: `0 0 0 2px ${project.color}40`,
+                            }}
+                          />
+                          <span className="truncate">{project.name}</span>
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-dark dark">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteProject(project._id);
+                                if (selectedView === project._id) {
+                                  onViewChange("all");
+                                }
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Delete project
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     ))
                   )}
                 </div>
