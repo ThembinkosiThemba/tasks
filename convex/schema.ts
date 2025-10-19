@@ -68,4 +68,14 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_and_read", ["userId", "read"]),
+
+  thresholds: defineTable({
+    projectId: v.optional(v.id("projects")), // null/undefined = global default
+    priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    daysThreshold: v.number(),
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_project", ["userId", "projectId"])
+    .index("by_user_project_priority", ["userId", "projectId", "priority"]),
 });

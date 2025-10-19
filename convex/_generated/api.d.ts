@@ -14,12 +14,15 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as auth from "../auth.js";
+import type * as crons from "../crons.js";
 import type * as dailyTasks from "../dailyTasks.js";
 import type * as http from "../http.js";
 import type * as notes from "../notes.js";
 import type * as notifications from "../notifications.js";
 import type * as projects from "../projects.js";
+import type * as stats from "../stats.js";
 import type * as tasks from "../tasks.js";
+import type * as thresholds from "../thresholds.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -31,12 +34,15 @@ import type * as tasks from "../tasks.js";
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  crons: typeof crons;
   dailyTasks: typeof dailyTasks;
   http: typeof http;
   notes: typeof notes;
   notifications: typeof notifications;
   projects: typeof projects;
+  stats: typeof stats;
   tasks: typeof tasks;
+  thresholds: typeof thresholds;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

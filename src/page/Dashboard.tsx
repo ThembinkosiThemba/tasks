@@ -8,6 +8,7 @@ import { TaskList } from "@/components/task-list";
 import { DailySchedule } from "@/components/daily-schedule";
 import { MeetingNotes } from "@/components/meeting-notes";
 import { ProjectPage } from "@/components/project-page";
+import { StatsPage } from "@/components/stats-page";
 import { TaskDialog } from "@/components/task-dialog";
 import { TaskViewDialog } from "@/components/task-view-dialog";
 import { ProjectDialog } from "@/components/project-dialog";
@@ -100,8 +101,13 @@ export default function Dashboard() {
         e.preventDefault();
         setSelectedView("daily");
       }
-      // Cmd/Ctrl + 3 for meeting notes
+      // Cmd/Ctrl + 3 for stats
       if ((e.metaKey || e.ctrlKey) && e.key === "3") {
+        e.preventDefault();
+        setSelectedView("stats");
+      }
+      // Cmd/Ctrl + 4 for meeting notes
+      if ((e.metaKey || e.ctrlKey) && e.key === "4") {
         e.preventDefault();
         setSelectedView("notes");
       }
@@ -298,6 +304,8 @@ export default function Dashboard() {
             onAddSchedule={() => setScheduleDialogOpen(true)}
             onToggleComplete={(id) => void handleToggleDailyComplete(id)}
           />
+        ) : selectedView === "stats" ? (
+          <StatsPage />
         ) : selectedView === "notes" ? (
           <MeetingNotes
             notes={meetingNotes}
@@ -324,6 +332,8 @@ export default function Dashboard() {
           <TaskList
             tasks={filteredTasks}
             projects={projects}
+            notifications={notifications}
+            unreadCount={unreadCount}
             onAddTask={() => {
               setEditingTask(undefined);
               setTaskDialogOpen(true);
@@ -344,6 +354,9 @@ export default function Dashboard() {
               setSchedulingTask(task);
               setScheduleDialogOpen(true);
             }}
+            onMarkNotificationAsRead={(id) => void handleMarkNotificationAsRead(id)}
+            onMarkAllNotificationsAsRead={() => void handleMarkAllNotificationsAsRead()}
+            onDeleteNotification={(id) => void handleDeleteNotification(id)}
             onViewChange={setSelectedView}
             isLoading={isTasksLoading}
           />

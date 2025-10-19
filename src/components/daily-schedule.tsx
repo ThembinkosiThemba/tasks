@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Plus,
   Clock,
@@ -6,7 +7,6 @@ import {
   CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
   Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,21 @@ export function DailySchedule({
   onAddSchedule,
   onToggleComplete,
 }: DailyScheduleProps) {
-  const todaySchedule = dailyTasks.filter((dt) => dt.date === selectedDate);
+  const [filterProject, setFilterProject] = useState<string | null>(null);
 
   const getTask = (taskId: string) => tasks.find((t) => t._id === taskId);
   const getProject = (projectId?: string) =>
     projects.find((p) => p._id === projectId);
+
+  const todaySchedule = dailyTasks
+    .filter((dt) => dt.date === selectedDate)
+    .filter((dt) => {
+      if (!filterProject) return true;
+      const task = getTask(dt.taskId);
+      if (!task) return false;
+      if (filterProject === "none") return !task.projectId;
+      return task.projectId === filterProject;
+    });
 
   const changeDate = (days: number) => {
     const date = new Date(selectedDate);
@@ -80,101 +90,133 @@ export function DailySchedule({
             </Button>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4 md:p-6 space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => changeDate(-1)}
-                  className="h-9 w-9 shrink-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
+          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+            {/* Date Selector - More Compact */}
+            <div className="flex items-center gap-2 bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-border/30 rounded-lg px-3 py-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => changeDate(-1)}
+                className="h-7 w-7 shrink-0"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
 
-                <div className="flex-1 text-center min-w-0">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
-                    <h3 className="text-lg md:text-2xl font-bold truncate">
-                      {new Date(selectedDate).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </h3>
-                  </div>
+              <div className="flex items-center gap-2 min-w-0">
+                <CalendarIcon className="h-4 w-4 text-primary shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold truncate">
+                    {new Date(selectedDate).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
                   <input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => onDateChange(e.target.value)}
-                    className="px-3 md:px-4 py-1.5 md:py-2 bg-background border border-border/50 rounded-lg text-xs md:text-sm font-medium hover:border-primary/50 transition-colors cursor-pointer"
+                    className="text-[10px] text-muted-foreground bg-transparent border-none p-0 cursor-pointer hover:text-primary transition-colors"
                   />
                 </div>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => changeDate(1)}
-                  className="h-9 w-9 shrink-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
               </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => changeDate(1)}
+                className="h-7 w-7 shrink-0"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
 
               {!isToday && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
                   onClick={goToToday}
-                  className="w-full bg-transparent text-xs md:text-sm"
+                  className="h-7 text-xs ml-2"
                 >
-                  Jump to Today
+                  Today
                 </Button>
               )}
             </div>
 
-            <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 md:p-6 space-y-3">
-              <div className="flex items-center gap-2 text-primary">
-                <Target className="h-5 w-5" />
-                <h4 className="font-semibold">Daily Stats</h4>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Total Tasks
-                  </span>
-                  <span className="text-2xl font-bold">{totalCount}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Completed
-                  </span>
-                  <span className="text-2xl font-bold text-primary">
+            {/* Daily Stats - More Compact */}
+            <div className="flex items-center gap-4 bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-border/30 rounded-lg px-4 py-2">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-primary">
                     {completedCount}
                   </span>
+                  <span className="text-xs text-muted-foreground">/</span>
+                  <span className="text-sm font-semibold">{totalCount}</span>
                 </div>
               </div>
 
               {totalCount > 0 && (
-                <div className="pt-3 border-t border-primary/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      Progress
-                    </span>
-                    <span className="text-sm font-bold">
+                <>
+                  <div className="h-6 w-px bg-border/50" />
+                  <div className="flex items-center gap-2 min-w-[120px]">
+                    <div className="flex-1 h-1.5 bg-background/50 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-500 ease-out"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-primary shrink-0">
                       {completionPercentage}%
                     </span>
                   </div>
-                  <div className="h-2 bg-background/50 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all duration-500 ease-out"
-                      style={{ width: `${completionPercentage}%` }}
-                    />
-                  </div>
-                </div>
+                </>
               )}
             </div>
+          </div>
+
+          {/* Project Filter Pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant={filterProject === null ? "default" : "outline"}
+              size="sm"
+              className="h-7 rounded-full text-xs"
+              onClick={() => setFilterProject(null)}
+            >
+              All
+            </Button>
+            <Button
+              variant={filterProject === "none" ? "default" : "outline"}
+              size="sm"
+              className="h-7 rounded-full text-xs"
+              onClick={() => setFilterProject("none")}
+            >
+              No Project
+            </Button>
+            {projects
+              .map((project) => ({
+                project,
+                taskCount: dailyTasks
+                  .filter((dt) => dt.date === selectedDate)
+                  .filter((dt) => {
+                    const task = getTask(dt.taskId);
+                    return task?.projectId === project._id;
+                  }).length,
+              }))
+              .filter(({ taskCount }) => taskCount > 0)
+              .sort((a, b) => b.taskCount - a.taskCount)
+              .map(({ project }) => (
+                <Button
+                  key={project._id}
+                  variant={
+                    filterProject === project._id ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="h-7 rounded-full text-xs"
+                  onClick={() => setFilterProject(project._id)}
+                >
+                  {project.name}
+                </Button>
+              ))}
           </div>
         </div>
 
