@@ -8,16 +8,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  Pencil,
-  Trash,
-  Clock,
-  Circle,
-  CheckCircle2,
-  Check,
-} from "lucide-react";
+import { Pencil, Trash, Clock } from "lucide-react";
 import type { Task, Project } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, getPriorityColor, getStatusConfig } from "@/lib/utils";
 
 interface TaskViewDialogProps {
   open: boolean;
@@ -40,36 +33,6 @@ export function TaskViewDialog({
 }: TaskViewDialogProps) {
   if (!task) return null;
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "text-red-400 bg-red-500/10 border-red-500/20";
-      case "medium":
-        return "text-yellow-400 bg-yellow-500/10 border-yellow-500/20";
-      case "low":
-        return "text-blue-400 bg-blue-500/10 border-blue-500/20";
-      default:
-        return "text-muted-foreground bg-muted";
-    }
-  };
-
-  const getStatusConfig = (status: Task["status"]) => {
-    switch (status) {
-      case "todo":
-        return { label: "To Do", color: "bg-blue-500", icon: Circle };
-      case "in-progress":
-        return { label: "In Progress", color: "bg-yellow-500", icon: Clock };
-      case "review":
-        return {
-          label: "Review",
-          color: "bg-orange-500",
-          icon: Check,
-        };
-      case "done":
-        return { label: "Done", color: "bg-green-500", icon: CheckCircle2 };
-    }
-  };
-
   const statusConfig = getStatusConfig(task.status);
 
   return (
@@ -83,7 +46,7 @@ export function TaskViewDialog({
         <div className="space-y-6 py-4">
           {/* Status and Priority Badges */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-background/50 border border-border/30">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/30">
               <div className={cn("h-2 w-2 rounded-full", statusConfig.color)} />
               <span className="text-sm font-medium">{statusConfig.label}</span>
             </div>
@@ -94,10 +57,10 @@ export function TaskViewDialog({
                 getPriorityColor(task.priority),
               )}
             >
-              {task.priority} Priority
+              {task.priority}
             </Badge>
             {project && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-background/50 border border-border/30">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/30">
                 <div
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: project.color }}
@@ -128,7 +91,7 @@ export function TaskViewDialog({
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Completed
                 </p>
-                <p className="text-sm text-foreground">
+                <p className="text-sm">
                   {new Date(task.completedAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",

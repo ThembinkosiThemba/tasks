@@ -164,6 +164,7 @@ export const create = mutation({
 
 /**
  * Update an existing task
+ * Syncs daily tasks when status changes to/from done
  */
 export const update = mutation({
   args: {
@@ -205,6 +206,9 @@ export const update = mutation({
       }
     }
 
+    const wasCompleted = task.status === "done";
+    const isNowCompleted = args.status === "done";
+
     await ctx.db.patch(args.taskId, {
       title: args.title,
       description: args.description,
@@ -212,7 +216,22 @@ export const update = mutation({
       status: args.status,
       priority: args.priority,
       reminderDate: args.reminderDate,
+      ...(isNowCompleted && !wasCompleted ? { completedAt: Date.now() } : {}),
     });
+
+    // Sync daily tasks when status changes to/from done
+    if (wasCompleted !== isNowCompleted) {
+      const dailyTasks = await ctx.db
+        .query("dailyTasks")
+        .withIndex("by_task", (q) => q.eq("taskId", args.taskId))
+        .collect();
+
+      for (const dailyTask of dailyTasks) {
+        await ctx.db.patch(dailyTask._id, {
+          completed: isNowCompleted,
+        });
+      }
+    }
 
     return null;
   },
@@ -220,6 +239,7 @@ export const update = mutation({
 
 /**
  * Complete a task (sets status to done and records completion time)
+ * Also marks all associated daily tasks as completed
  */
 export const complete = mutation({
   args: { taskId: v.id("tasks") },
@@ -244,6 +264,20 @@ export const complete = mutation({
       status: "done",
       completedAt: Date.now(),
     });
+
+    // Mark all associated daily tasks as completed
+    const dailyTasks = await ctx.db
+      .query("dailyTasks")
+      .withIndex("by_task", (q) => q.eq("taskId", args.taskId))
+      .collect();
+
+    for (const dailyTask of dailyTasks) {
+      if (!dailyTask.completed) {
+        await ctx.db.patch(dailyTask._id, {
+          completed: true,
+        });
+      }
+    }
 
     return null;
   },

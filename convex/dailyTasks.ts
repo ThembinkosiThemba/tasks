@@ -15,8 +15,8 @@ export const list = query({
       _creationTime: v.number(),
       taskId: v.id("tasks"),
       date: v.string(),
-      startTime: v.string(),
-      endTime: v.string(),
+      startTime: v.optional(v.string()),
+      endTime: v.optional(v.string()),
       completed: v.boolean(),
       userId: v.id("users"),
     })
@@ -62,8 +62,8 @@ export const getByTask = query({
       _creationTime: v.number(),
       taskId: v.id("tasks"),
       date: v.string(),
-      startTime: v.string(),
-      endTime: v.string(),
+      startTime: v.optional(v.string()),
+      endTime: v.optional(v.string()),
       completed: v.boolean(),
       userId: v.id("users"),
     })
@@ -96,8 +96,8 @@ export const create = mutation({
   args: {
     taskId: v.id("tasks"),
     date: v.string(),
-    startTime: v.string(),
-    endTime: v.string(),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
     completed: v.optional(v.boolean()),
   },
   returns: v.id("dailyTasks"),
@@ -133,8 +133,8 @@ export const update = mutation({
   args: {
     dailyTaskId: v.id("dailyTasks"),
     date: v.string(),
-    startTime: v.string(),
-    endTime: v.string(),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
     completed: v.boolean(),
   },
   returns: v.null(),
@@ -167,6 +167,7 @@ export const update = mutation({
 
 /**
  * Toggle the completed status of a daily task
+ * Syncs task status if all daily tasks are completed/uncompleted
  */
 export const toggleComplete = mutation({
   args: { dailyTaskId: v.id("dailyTasks") },
@@ -187,9 +188,41 @@ export const toggleComplete = mutation({
       throw new Error("Unauthorized");
     }
 
+    const newCompletedStatus = !dailyTask.completed;
+
     await ctx.db.patch(args.dailyTaskId, {
-      completed: !dailyTask.completed,
+      completed: newCompletedStatus,
     });
+
+    // Get the parent task
+    const task = await ctx.db.get(dailyTask.taskId);
+    if (!task) {
+      return null;
+    }
+
+    // Get all daily tasks for this task
+    const allDailyTasks = await ctx.db
+      .query("dailyTasks")
+      .withIndex("by_task", (q) => q.eq("taskId", dailyTask.taskId))
+      .collect();
+
+    // Check if all daily tasks are completed
+    const allCompleted = allDailyTasks.every((dt) =>
+      dt._id === args.dailyTaskId ? newCompletedStatus : dt.completed
+    );
+
+    // Update task status based on daily tasks completion
+    if (allCompleted && task.status !== "done") {
+      await ctx.db.patch(task._id, {
+        status: "done",
+        completedAt: Date.now(),
+      });
+    } else if (!allCompleted && task.status === "done") {
+      // If unmarking a daily task and the main task is done, revert to in-progress
+      await ctx.db.patch(task._id, {
+        status: "in-progress",
+      });
+    }
 
     return null;
   },

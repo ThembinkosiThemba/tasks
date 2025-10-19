@@ -10,7 +10,9 @@ export default defineSchema({
 
   projects: defineTable({
     name: v.string(),
+    description: v.optional(v.string()),
     color: v.string(),
+    tags: v.optional(v.array(v.string())),
     userId: v.id("users"),
   }).index("by_user", ["userId"]),
 
@@ -36,8 +38,8 @@ export default defineSchema({
   dailyTasks: defineTable({
     taskId: v.id("tasks"),
     date: v.string(),
-    startTime: v.string(),
-    endTime: v.string(),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
     completed: v.boolean(),
     userId: v.id("users"),
   })

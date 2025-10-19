@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Task, Project, TaskStatus } from "@/types";
 import type { Id } from "../../convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
+import { cn, getPriorityColor } from "@/lib/utils";
 
 interface TaskListProps {
   tasks: Task[];
@@ -94,19 +94,6 @@ function TaskCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "text-red-400 bg-red-500/10 border-red-500/20";
-      case "medium":
-        return "text-yellow-400 bg-yellow-500/10 border-yellow-500/20";
-      case "low":
-        return "text-blue-400 bg-blue-500/10 border-blue-500/20";
-      default:
-        return "text-muted-foreground bg-muted";
-    }
   };
 
   const getNextStatus = (
@@ -275,7 +262,7 @@ function TaskCard({
 
 function TaskCardSkeleton() {
   return (
-    <div className="bg-card border border-border/50 rounded-lg p-4 animate-in fade-in-0 slide-in-from-bottom-2">
+    <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-lg p-4 animate-in fade-in-0 slide-in-from-bottom-2">
       <div className="flex items-start gap-3">
         <Skeleton className="h-5 w-5 rounded-full mt-1 shrink-0" />
         <div className="flex-1 min-w-0 space-y-3">
@@ -610,7 +597,6 @@ export function TaskList({
               <span className="sm:hidden">New</span>
             </Button>
           </div>
-
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1 max-w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -622,25 +608,40 @@ export function TaskList({
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 flex-wrap"></div>
-          </div>
+            <div className="w-full sm:w-2/3">
+              {totalTasks > 0 && (
+                <div className="relative overflow-hidden border border-border/50 rounded-md">
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary/60 transition-all duration-700 ease-out"
+                    style={{
+                      width: `${completionPercentage}%`,
+                    }}
+                  />
 
-          {totalTasks > 0 && (
-            <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Overall Progress</span>
-                <span className="text-sm text-muted-foreground">
-                  {completionPercentage}%
-                </span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-500 ease-out"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </div>
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-muted/30 to-muted/10"
+                    style={{
+                      left: `${completionPercentage}%`,
+                    }}
+                  />
+
+                  <div className="relative px-4 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                        Overall Progress
+                      </span>
+                      <span className="text-xs text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                        {completedTasks} of {totalTasks} tasks
+                      </span>
+                    </div>
+                    <span className="text-lg font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                      {completionPercentage}%
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Project Filter Pills */}
           <div className="flex items-center gap-2 flex-wrap">

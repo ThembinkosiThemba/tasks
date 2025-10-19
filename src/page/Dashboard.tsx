@@ -4,9 +4,10 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Sidebar } from "@/components/sidebar";
-import { TaskList } from "@/components/task-list-new";
+import { TaskList } from "@/components/task-list";
 import { DailySchedule } from "@/components/daily-schedule";
 import { MeetingNotes } from "@/components/meeting-notes";
+import { ProjectPage } from "@/components/project-page";
 import { TaskDialog } from "@/components/task-dialog";
 import { TaskViewDialog } from "@/components/task-view-dialog";
 import { ProjectDialog } from "@/components/project-dialog";
@@ -32,6 +33,7 @@ export default function Dashboard() {
 
   // Convex mutations
   const createProject = useMutation(api.projects.create);
+  const updateProject = useMutation(api.projects.update);
   const deleteProject = useMutation(api.projects.remove);
   const createTask = useMutation(api.tasks.create);
   const updateTask = useMutation(api.tasks.update);
@@ -115,8 +117,18 @@ export default function Dashboard() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleAddProject = async (name: string, color: string) => {
-    await createProject({ name, color });
+  const handleAddProject = async (name: string, color: string, description?: string, tags?: string[]) => {
+    await createProject({ name, color, description, tags });
+  };
+
+  const handleUpdateProject = async (
+    projectId: Id<"projects">,
+    name: string,
+    description: string | undefined,
+    color: string,
+    tags: string[] | undefined
+  ) => {
+    await updateProject({ projectId, name, description, color, tags });
   };
 
   const handleDeleteProject = async (projectId: Id<"projects">) => {
@@ -232,9 +244,16 @@ export default function Dashboard() {
     await deleteNotification({ notificationId });
   };
 
+  // Check if viewing a project page
+  const isProjectView = selectedView.startsWith("project:");
+  const projectId = isProjectView ? selectedView.replace("project:", "") as Id<"projects"> : null;
+  const currentProject = projectId ? projects.find((p) => p._id === projectId) : null;
+
   const filteredTasks =
     selectedView === "all"
       ? tasks
+      : isProjectView && projectId
+      ? tasks.filter((t) => t.projectId === projectId)
       : tasks.filter((t) => t.projectId === (selectedView as Id<"projects">));
 
   return (
@@ -290,6 +309,14 @@ export default function Dashboard() {
             }}
             onDeleteNote={(id) => void handleDeleteNote(id)}
             onSaveNote={handleSaveNote}
+          />
+        ) : isProjectView && currentProject ? (
+          <ProjectPage
+            project={currentProject}
+            tasks={tasks}
+            onUpdateProject={handleUpdateProject}
+            onViewTasks={() => setSelectedView(projectId!)}
+            onBack={() => setSelectedView("all")}
           />
         ) : (
           <TaskList

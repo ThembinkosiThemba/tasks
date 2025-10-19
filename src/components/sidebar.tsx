@@ -184,12 +184,13 @@ export function Sidebar({
                           >
                             <Button
                               variant={
+                                selectedView === `project:${project._id}` ||
                                 selectedView === project._id
                                   ? "secondary"
                                   : "ghost"
                               }
                               className="flex-1 justify-start h-10 font-medium transition-all hover:translate-x-1 group"
-                              onClick={() => handleViewChange(project._id)}
+                              onClick={() => handleViewChange(`project:${project._id}`)}
                             >
                               <div
                                 className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"

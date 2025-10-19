@@ -5,7 +5,9 @@ export interface Project {
   _id: Id<"projects">;
   _creationTime: number;
   name: string;
+  description?: string;
   color: string;
+  tags?: string[];
   userId: Id<"users">;
 }
 
@@ -30,8 +32,8 @@ export interface DailyTask {
   _creationTime: number;
   taskId: Id<"tasks">;
   date: string;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
   completed: boolean;
   userId: Id<"users">;
 }
