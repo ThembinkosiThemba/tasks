@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Task, Project } from "@/types";
+import type { Task, Project, TaskType } from "@/types";
 
 interface TaskDialogProps {
   open: boolean;
@@ -40,6 +40,7 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState<string>("none");
   const [status, setStatus] = useState<Task["status"]>("todo");
   const [priority, setPriority] = useState<Task["priority"]>("medium");
+  const [taskType, setTaskType] = useState<string>("general");
   const [reminderDate, setReminderDate] = useState<string>("");
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export function TaskDialog({
       setProjectId((task.projectId as string) || "none");
       setStatus(task.status);
       setPriority(task.priority);
+      setTaskType((task.type as string) || "general");
       setReminderDate(
         task.reminderDate
           ? new Date(task.reminderDate).toISOString().slice(0, 16)
@@ -60,6 +62,7 @@ export function TaskDialog({
       setProjectId("none");
       setStatus("todo");
       setPriority("medium");
+      setTaskType("general");
       setReminderDate("");
     }
   }, [task, open]);
@@ -72,6 +75,7 @@ export function TaskDialog({
       projectId: projectId === "none" ? undefined : (projectId as any),
       status,
       priority,
+      type: taskType === "general" ? undefined : (taskType as TaskType),
       reminderDate: reminderDate ? new Date(reminderDate).getTime() : undefined,
     });
     onOpenChange(false);
@@ -142,32 +146,45 @@ export function TaskDialog({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">Type (optional)</Label>
+              <Select value={taskType} onValueChange={setTaskType}>
+                <SelectTrigger id="type">
+                  <SelectValue placeholder="No type" />
+                </SelectTrigger>
+                <SelectContent className="">
+                  <SelectItem value="bug">Bug</SelectItem>
+                  <SelectItem value="feature">Feature</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="project">Project</Label>
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger id="project">
+                  <SelectValue placeholder="No project" />
+                </SelectTrigger>
+                <SelectContent className="">
+                  <SelectItem value="none">No project</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project._id} value={project._id}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: project.color }}
+                        />
+                        {project.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="project">Project</Label>
-            <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger id="project">
-                <SelectValue placeholder="No project" />
-              </SelectTrigger>
-              <SelectContent className="">
-                <SelectItem value="none">No project</SelectItem>
-                {projects.map((project) => (
-                  <SelectItem key={project._id} value={project._id}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: project.color }}
-                      />
-                      {project.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="reminder">Reminder (optional)</Label>
             <Input
               id="reminder"
@@ -176,7 +193,7 @@ export function TaskDialog({
               onChange={(e) => setReminderDate(e.target.value)}
               placeholder="Set a reminder"
             />
-          </div>
+          </div> */}
 
           <div className="flex justify-end gap-2">
             <Button type="button" onClick={() => onOpenChange(false)}>

@@ -138,7 +138,7 @@ function TaskCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-lg p-4 transition-all duration-200",
+        "group bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-lg py-4 px-1 transition-all duration-200",
         "hover:border-primary/50 hover:shadow-md hover:shadow-primary/5",
         (isDragging || isSortableDragging) && "opacity-50",
         !isDragging && "animate-in fade-in-0 slide-in-from-bottom-2",

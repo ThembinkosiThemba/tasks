@@ -105,29 +105,45 @@ export function ScheduleDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time</Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endTime">End Time</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-              />
-            </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="timeBlock"
+              checked={useTimeBlock}
+              onCheckedChange={(checked) => setUseTimeBlock(checked as boolean)}
+            />
+            <Label
+              htmlFor="timeBlock"
+              className="text-sm font-normal cursor-pointer"
+            >
+              Time block this task
+            </Label>
           </div>
+
+          {useTimeBlock && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button

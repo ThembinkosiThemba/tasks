@@ -27,6 +27,7 @@ export default defineSchema({
       v.literal("done"),
     ),
     priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    type: v.optional(v.union(v.literal("bug"), v.literal("feature"), v.literal("general"))),
     completedAt: v.optional(v.number()),
     reminderDate: v.optional(v.number()),
     userId: v.id("users"),

@@ -144,6 +144,7 @@ export default function Dashboard() {
         projectId: taskData.projectId,
         status: taskData.status!,
         priority: taskData.priority!,
+        type: taskData.type,
         reminderDate: taskData.reminderDate,
       });
     } else {
@@ -153,6 +154,7 @@ export default function Dashboard() {
         projectId: taskData.projectId,
         status: taskData.status || "todo",
         priority: taskData.priority || "medium",
+        type: taskData.type,
         reminderDate: taskData.reminderDate,
       });
     }
@@ -189,8 +191,8 @@ export default function Dashboard() {
   const handleScheduleTask = async (
     taskId: Id<"tasks">,
     date: string,
-    startTime: string,
-    endTime: string,
+    startTime?: string,
+    endTime?: string,
   ) => {
     await createDailyTask({
       taskId,

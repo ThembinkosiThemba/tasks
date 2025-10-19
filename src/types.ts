@@ -22,6 +22,7 @@ export interface Task {
   projectId?: Id<"projects">;
   status: TaskStatus;
   priority: "low" | "medium" | "high";
+  type?: TaskType;
   completedAt?: number;
   reminderDate?: number;
   userId: Id<"users">;
