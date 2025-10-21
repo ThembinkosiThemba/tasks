@@ -1,13 +1,16 @@
-import { cronJobs } from "convex/server";
-import { internal } from "./_generated/api";
+// import { cronJobs } from "convex/server";
+// import { internal } from "./_generated/api";
 
-const crons = cronJobs();
+// const crons = cronJobs();
 
-// Check for overdue tasks every minute
-crons.interval(
-  "check overdue tasks",
-  { minutes: 1 },
-  internal.thresholds.checkAndNotify,
-);
+// // Check for overdue tasks every minute
+// crons.daily(
+//   "check overdue tasks",
+//   {
+//     hourUTC: 4,
+//     minuteUTC: 0
+//   },
+//   internal.thresholds.checkAndNotify,
+// );
 
-export default crons;
+// export default crons;

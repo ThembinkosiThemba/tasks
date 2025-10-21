@@ -8,7 +8,7 @@ interface MobileHeaderProps {
   notificationsSlot?: ReactNode;
 }
 
-export function MobileHeader({ onMenuOpen, onCommandOpen, notificationsSlot }: MobileHeaderProps) {
+export function MobileHeader({ onMenuOpen, onCommandOpen }: MobileHeaderProps) {
   return (
     <header className="sticky top-0 z-30 lg:hidden w-full border-b border-border/40 bg-card/80 backdrop-blur-md supports-[backdrop-filter]:bg-card/60">
       <div className="flex h-14 items-center px-4 gap-3">
@@ -28,7 +28,7 @@ export function MobileHeader({ onMenuOpen, onCommandOpen, notificationsSlot }: M
           <h1 className="text-lg font-bold tracking-tight truncate">task</h1>
         </div>
 
-        {notificationsSlot && <div className="shrink-0">{notificationsSlot}</div>}
+        {/* {notificationsSlot && <div className="shrink-0">{notificationsSlot}</div>} */}
 
         <Button
           variant="ghost"

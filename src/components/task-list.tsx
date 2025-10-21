@@ -43,25 +43,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Task, Project, TaskStatus, Notification } from "@/types";
+import type { Task, Project, TaskStatus } from "@/types";
 import type { Id } from "../../convex/_generated/dataModel";
 import { cn, getPriorityColor } from "@/lib/utils";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 interface TaskListProps {
   tasks: Task[];
   projects: Project[];
-  notifications: Notification[];
-  unreadCount: number;
+  // notifications: Notification[];
+  // unreadCount: number;
   onAddTask: () => void;
   onViewTask: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: Id<"tasks">) => void;
   onUpdateTaskStatus: (taskId: Id<"tasks">, status: TaskStatus) => void;
   onScheduleTask: (task: Task) => void;
-  onMarkNotificationAsRead: (notificationId: Id<"notifications">) => void;
-  onMarkAllNotificationsAsRead: () => void;
-  onDeleteNotification: (notificationId: Id<"notifications">) => void;
+  // onMarkNotificationAsRead: (notificationId: Id<"notifications">) => void;
+  // onMarkAllNotificationsAsRead: () => void;
+  // onDeleteNotification: (notificationId: Id<"notifications">) => void;
   onViewChange?: (view: string) => void;
   isLoading?: boolean;
 }
@@ -109,7 +108,8 @@ function TaskCard({
   const now = Date.now();
   const daysOpen = (now - task._creationTime) / (1000 * 60 * 60 * 24);
   const isOverdue = task.status !== "done" && daysOpen > threshold;
-  const isAtRisk = task.status !== "done" && daysOpen > threshold * 0.8 && !isOverdue;
+  const isAtRisk =
+    task.status !== "done" && daysOpen > threshold * 0.8 && !isOverdue;
 
   const getNextStatus = (
     currentStatus: Task["status"],
@@ -157,8 +157,11 @@ function TaskCard({
         "hover:shadow-md hover:shadow-primary/5",
         (isDragging || isSortableDragging) && "opacity-50",
         !isDragging && "animate-in fade-in-0 slide-in-from-bottom-2",
-        isOverdue && "border-destructive/70 border-2 bg-gradient-to-br from-destructive/15 to-destructive/5",
-        isAtRisk && !isOverdue && "border-warning/70 bg-gradient-to-br from-warning/10 to-warning/5",
+        isOverdue &&
+          "border-destructive/70 border-2 bg-gradient-to-br from-destructive/15 to-destructive/5",
+        isAtRisk &&
+          !isOverdue &&
+          "border-warning/70 bg-gradient-to-br from-warning/10 to-warning/5",
         !isOverdue && !isAtRisk && "border-border/50 hover:border-primary/50",
       )}
     >
@@ -233,7 +236,10 @@ function TaskCard({
               </Badge>
             )}
             {isAtRisk && !isOverdue && (
-              <Badge variant="outline" className="text-xs font-medium border-warning text-warning">
+              <Badge
+                variant="outline"
+                className="text-xs font-medium border-warning text-warning"
+              >
                 At Risk
               </Badge>
             )}
@@ -498,17 +504,17 @@ function DroppableColumn({
 export function TaskList({
   tasks,
   projects,
-  notifications,
-  unreadCount,
+  // notifications,
+  // unreadCount,
   onAddTask,
   onViewTask,
   onEditTask,
   onDeleteTask,
   onUpdateTaskStatus,
   onScheduleTask,
-  onMarkNotificationAsRead,
-  onMarkAllNotificationsAsRead,
-  onDeleteNotification,
+  // onMarkNotificationAsRead,
+  // onMarkAllNotificationsAsRead,
+  // onDeleteNotification,
   onViewChange,
   isLoading = false,
 }: TaskListProps) {
@@ -686,13 +692,13 @@ export function TaskList({
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <NotificationsDropdown
+              {/* <NotificationsDropdown
                 notifications={notifications}
                 unreadCount={unreadCount}
                 onMarkAsRead={onMarkNotificationAsRead}
                 onMarkAllAsRead={onMarkAllNotificationsAsRead}
                 onDelete={onDeleteNotification}
-              />
+              /> */}
               <Button
                 onClick={onAddTask}
                 size="lg"

@@ -16,7 +16,6 @@ import { ScheduleDialog } from "@/components/schedule-dialog";
 import { MeetingNoteDialog } from "@/components/meeting-note-dialog";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileHeader } from "@/components/mobile-header";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import type { Task, MeetingNote, TaskStatus } from "@/types";
 
 export default function Dashboard() {
@@ -29,8 +28,8 @@ export default function Dashboard() {
   const isTasksLoading = tasksQuery === undefined;
   const dailyTasks = useQuery(api.dailyTasks.list, {}) ?? [];
   const meetingNotes = useQuery(api.notes.list) ?? [];
-  const notifications = useQuery(api.notifications.list) ?? [];
-  const unreadCount = useQuery(api.notifications.getUnreadCount) ?? 0;
+  // const notifications = useQuery(api.notifications.list) ?? [];
+  // const unreadCount = useQuery(api.notifications.getUnreadCount) ?? 0;
 
   // Convex mutations
   const createProject = useMutation(api.projects.create);
@@ -45,11 +44,12 @@ export default function Dashboard() {
   const createNote = useMutation(api.notes.create);
   const updateNote = useMutation(api.notes.update);
   const deleteNote = useMutation(api.notes.remove);
-  const markNotificationAsRead = useMutation(api.notifications.markAsRead);
-  const markAllNotificationsAsRead = useMutation(
-    api.notifications.markAllAsRead,
-  );
-  const deleteNotification = useMutation(api.notifications.remove);
+
+  // const markNotificationAsRead = useMutation(api.notifications.markAsRead);
+  // const markAllNotificationsAsRead = useMutation(
+  //   api.notifications.markAllAsRead,
+  // );
+  // const deleteNotification = useMutation(api.notifications.remove);
 
   const [selectedView, setSelectedView] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState(
@@ -123,7 +123,12 @@ export default function Dashboard() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleAddProject = async (name: string, color: string, description?: string, tags?: string[]) => {
+  const handleAddProject = async (
+    name: string,
+    color: string,
+    description?: string,
+    tags?: string[],
+  ) => {
     await createProject({ name, color, description, tags });
   };
 
@@ -132,7 +137,7 @@ export default function Dashboard() {
     name: string,
     description: string | undefined,
     color: string,
-    tags: string[] | undefined
+    tags: string[] | undefined,
   ) => {
     await updateProject({ projectId, name, description, color, tags });
   };
@@ -236,48 +241,52 @@ export default function Dashboard() {
     await deleteNote({ noteId });
   };
 
-  const handleMarkNotificationAsRead = async (
-    notificationId: Id<"notifications">,
-  ) => {
-    await markNotificationAsRead({ notificationId });
-  };
+  // const handleMarkNotificationAsRead = async (
+  //   notificationId: Id<"notifications">,
+  // ) => {
+  //   await markNotificationAsRead({ notificationId });
+  // };
 
-  const handleMarkAllNotificationsAsRead = async () => {
-    await markAllNotificationsAsRead();
-  };
+  // const handleMarkAllNotificationsAsRead = async () => {
+  //   await markAllNotificationsAsRead();
+  // };
 
-  const handleDeleteNotification = async (
-    notificationId: Id<"notifications">,
-  ) => {
-    await deleteNotification({ notificationId });
-  };
+  // const handleDeleteNotification = async (
+  //   notificationId: Id<"notifications">,
+  // ) => {
+  //   await deleteNotification({ notificationId });
+  // };
 
   // Check if viewing a project page
   const isProjectView = selectedView.startsWith("project:");
-  const projectId = isProjectView ? selectedView.replace("project:", "") as Id<"projects"> : null;
-  const currentProject = projectId ? projects.find((p) => p._id === projectId) : null;
+  const projectId = isProjectView
+    ? (selectedView.replace("project:", "") as Id<"projects">)
+    : null;
+  const currentProject = projectId
+    ? projects.find((p) => p._id === projectId)
+    : null;
 
   const filteredTasks =
     selectedView === "all"
       ? tasks
       : isProjectView && projectId
-      ? tasks.filter((t) => t.projectId === projectId)
-      : tasks.filter((t) => t.projectId === (selectedView as Id<"projects">));
+        ? tasks.filter((t) => t.projectId === projectId)
+        : tasks.filter((t) => t.projectId === (selectedView as Id<"projects">));
 
   return (
     <div className="flex flex-col h-screen bg-dark dark">
       <MobileHeader
         onMenuOpen={() => setMobileMenuOpen(true)}
         onCommandOpen={() => setCommandPaletteOpen(true)}
-        notificationsSlot={
-          <NotificationsDropdown
-            notifications={notifications}
-            unreadCount={unreadCount}
-            onMarkAsRead={(id) => void handleMarkNotificationAsRead(id)}
-            onMarkAllAsRead={() => void handleMarkAllNotificationsAsRead()}
-            onDelete={(id) => void handleDeleteNotification(id)}
-          />
-        }
+        // notificationsSlot={
+        //   <NotificationsDropdown
+        //     notifications={notifications}
+        //     unreadCount={unreadCount}
+        //     onMarkAsRead={(id) => void handleMarkNotificationAsRead(id)}
+        //     onMarkAllAsRead={() => void handleMarkAllNotificationsAsRead()}
+        //     onDelete={(id) => void handleDeleteNotification(id)}
+        //   />
+        // }
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -332,8 +341,8 @@ export default function Dashboard() {
           <TaskList
             tasks={filteredTasks}
             projects={projects}
-            notifications={notifications}
-            unreadCount={unreadCount}
+            // notifications={notifications}
+            // unreadCount={unreadCount}
             onAddTask={() => {
               setEditingTask(undefined);
               setTaskDialogOpen(true);
@@ -354,9 +363,13 @@ export default function Dashboard() {
               setSchedulingTask(task);
               setScheduleDialogOpen(true);
             }}
-            onMarkNotificationAsRead={(id) => void handleMarkNotificationAsRead(id)}
-            onMarkAllNotificationsAsRead={() => void handleMarkAllNotificationsAsRead()}
-            onDeleteNotification={(id) => void handleDeleteNotification(id)}
+            // onMarkNotificationAsRead={(id) =>
+            //   void handleMarkNotificationAsRead(id)
+            // }
+            // onMarkAllNotificationsAsRead={() =>
+            //   void handleMarkAllNotificationsAsRead()
+            // }
+            // onDeleteNotification={(id) => void handleDeleteNotification(id)}
             onViewChange={setSelectedView}
             isLoading={isTasksLoading}
           />
