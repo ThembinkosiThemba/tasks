@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   FileText,
@@ -10,10 +10,10 @@ import {
   Eye,
   ArrowLeft,
   Check,
+  Loader,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -137,12 +137,85 @@ export function MeetingNotes({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Refs for tracking initial state and debounce timer
+  const initialTitleRef = useRef("");
+  const initialContentRef = useRef("");
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track unsaved changes
+  useEffect(() => {
+    const hasChanges =
+      title !== initialTitleRef.current ||
+      content !== initialContentRef.current;
+    setHasUnsavedChanges(hasChanges);
+  }, [title, content]);
+
+  // Auto-save with 10 second debounce
+  useEffect(() => {
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    // Only auto-save if there are unsaved changes and content exists
+    if (hasUnsavedChanges && (title.trim() || content.trim())) {
+      autoSaveTimerRef.current = setTimeout(() => {
+        handleSave();
+      }, 10000); // 10 seconds
+    }
+
+    // Cleanup
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [title, content, hasUnsavedChanges]);
+
+  // Ctrl+S keyboard shortcut for saving
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (title.trim() || content.trim()) {
+          handleSave();
+        }
+      }
+    };
+
+    // Only add listener when editor is open
+    if (isCreatingNew || editingNote !== null) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isCreatingNew, editingNote, title, content]);
+
+  // Warn before closing with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && (isCreatingNew || editingNote !== null)) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges, isCreatingNew, editingNote]);
 
   const handleCreateNote = () => {
     setIsCreatingNew(true);
     setEditingNote(null);
     setTitle("");
     setContent("");
+    initialTitleRef.current = "";
+    initialContentRef.current = "";
+    setHasUnsavedChanges(false);
   };
 
   const handleEditNoteClick = (note: MeetingNote) => {
@@ -150,6 +223,9 @@ export function MeetingNotes({
     setEditingNote(note);
     setTitle(note.title);
     setContent(note.content);
+    initialTitleRef.current = note.title;
+    initialContentRef.current = note.content;
+    setHasUnsavedChanges(false);
   };
 
   // Manual save functionality
@@ -169,17 +245,33 @@ export function MeetingNotes({
       onSaveNote(noteData);
     }
 
+    // Update initial refs to mark as saved
+    initialTitleRef.current = title || "Untitled";
+    initialContentRef.current = content;
+    setHasUnsavedChanges(false);
+
     setTimeout(() => {
       setIsSaving(false);
-      handleCancel();
+      // handleCancel();
     }, 500);
   };
 
   const handleCancel = () => {
+    // Warn if there are unsaved changes
+    if (hasUnsavedChanges) {
+      const confirmClose = window.confirm(
+        "You have unsaved changes. Are you sure you want to close without saving?",
+      );
+      if (!confirmClose) return;
+    }
+
     setIsCreatingNew(false);
     setEditingNote(null);
     setTitle("");
     setContent("");
+    initialTitleRef.current = "";
+    initialContentRef.current = "";
+    setHasUnsavedChanges(false);
   };
 
   const filteredNotes = notes
@@ -197,56 +289,66 @@ export function MeetingNotes({
   // Full-window editor view
   if (showEditor) {
     return (
-      <div className="flex-1 overflow-auto bg-dark">
-        <div className="h-full max-w-[900px] mx-auto flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-4 p-4 md:p-6 border-b border-border/50 sticky top-0 bg-dark/95 backdrop-blur-sm z-10">
+      <div className="flex-1 overflow-auto bg-gradient-to-b from-dark via-dark to-dark/95">
+        <div className="h-full max-w-[850px] mx-auto flex flex-col">
+          {/* Minimal Header */}
+          <div className="flex items-center justify-between gap-4 px-6 py-3 border-b border-border/30 sticky top-0 bg-dark/80 backdrop-blur-md z-10">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCancel}
-              className="gap-2"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-3.5 w-3.5" />
               Back
             </Button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {hasUnsavedChanges && !isSaving && (
+                <span className="text-xs text-amber-500/80 hidden sm:inline">
+                  Unsaved changes • Press Ctrl+S to save
+                </span>
+              )}
               <Button
                 onClick={handleSave}
                 disabled={isSaving || (!title.trim() && !content.trim())}
                 size="sm"
+                className="shadow-sm"
+                variant={"secondary"}
               >
                 {isSaving ? (
                   <>
-                    <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin mr-2" />
+                    <Loader className="w-5 h-5 animate-spin" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Check className="h-3.5 w-3.5 mr-2" />
-                    Save
+                    <Check className="h-3.5 w-3.5 mr-1.5" />
+                    Save Note
                   </>
                 )}
               </Button>
             </div>
           </div>
 
-          {/* Editor */}
-          <div className="flex-1 p-6 md:p-12 space-y-6">
-            {/* Title Input */}
-            <Input
+          {/* Editor Area */}
+          <div className="flex-1 px-8 md:px-16 py-10 space-y-5 overflow-auto">
+            <input
+              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Untitled"
-              className="text-4xl font-bold border-none bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40"
+              placeholder="Untitled Note"
+              className="w-full text-3xl md:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/30 text-foreground/95"
+              autoFocus
             />
 
-            {/* Content Textarea */}
-            <Textarea
+            {/* Subtle separator */}
+            <div className="h-px bg-gradient-to-r from-transparent via-border/20 to-transparent" />
+
+            <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Start writing your notes... (Markdown supported)"
-              className="min-h-[500px] resize-none border-none bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base leading-relaxed font-normal"
+              placeholder="Start writing your thoughts... You can use **bold**, *italic*, lists, and more."
+              className="w-full min-h-[calc(100vh-280px)] resize-none bg-transparent border-none outline-none focus:outline-none text-base md:text-lg leading-relaxed text-foreground/90 placeholder:text-muted-foreground/30 font-normal"
             />
           </div>
         </div>
@@ -254,7 +356,6 @@ export function MeetingNotes({
     );
   }
 
-  // List view
   return (
     <div className="flex-1 overflow-auto bg-dark">
       <div className="p-4 md:p-8 space-y-6 max-w-[1400px] mx-auto">
@@ -343,7 +444,6 @@ export function MeetingNotes({
           </div>
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border/50">
             <Button
-              variant="outline"
               onClick={() => {
                 if (viewingNote) {
                   handleEditNoteClick(viewingNote);
@@ -354,7 +454,9 @@ export function MeetingNotes({
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </Button>
-            <Button onClick={() => setViewingNote(null)}>Close</Button>
+            <Button variant={"secondary"} onClick={() => setViewingNote(null)}>
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -373,6 +373,8 @@ function DroppableColumn({
   onFilterPriorityChange,
   onFilterTypeChange,
   isLoading = false,
+  hasMore = false,
+  onLoadMore,
 }: {
   status: TaskStatus;
   tasks: Task[];
@@ -390,6 +392,8 @@ function DroppableColumn({
   filterType: string | null;
   onFilterTypeChange: (type: string | null) => void;
   isLoading?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }) {
   const getProject = (projectId?: string) =>
     projects.find((p) => p._id === projectId);
@@ -517,24 +521,36 @@ function DroppableColumn({
               <p className="text-sm text-muted-foreground">Drop tasks here</p>
             </div>
           ) : (
-            tasks.map((task) => (
-              <TaskCard
-                key={task._id}
-                task={task}
-                project={getProject(task.projectId)}
-                isScheduled={isTaskScheduled(task._id)}
-                onView={() => onView(task)}
-                onEdit={() => onEdit(task)}
-                onDelete={() => onDelete(task._id)}
-                onSchedule={() => onSchedule(task)}
-                onUpdateStatus={(newStatus) => {
-                  const fullTask = tasks.find((t) => t._id === task._id);
-                  if (fullTask) {
-                    onUpdateTaskStatus(fullTask._id, newStatus);
-                  }
-                }}
-              />
-            ))
+            <>
+              {tasks.map((task) => (
+                <TaskCard
+                  key={task._id}
+                  task={task}
+                  project={getProject(task.projectId)}
+                  isScheduled={isTaskScheduled(task._id)}
+                  onView={() => onView(task)}
+                  onEdit={() => onEdit(task)}
+                  onDelete={() => onDelete(task._id)}
+                  onSchedule={() => onSchedule(task)}
+                  onUpdateStatus={(newStatus) => {
+                    const fullTask = tasks.find((t) => t._id === task._id);
+                    if (fullTask) {
+                      onUpdateTaskStatus(fullTask._id, newStatus);
+                    }
+                  }}
+                />
+              ))}
+              {hasMore && onLoadMore && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onLoadMore}
+                  className="w-full mt-2 text-muted-foreground hover:text-foreground"
+                >
+                  View More
+                </Button>
+              )}
+            </>
           )}
         </div>
       </SortableContext>
@@ -557,6 +573,7 @@ export function TaskList({
 }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterProject, setFilterProject] = useState<string | null>(null);
+  const [doneTasksLimit, setDoneTasksLimit] = useState(5);
   const [columnSortBy, setColumnSortBy] = useState<{
     todo: "newest" | "oldest";
     "in-progress": "newest" | "oldest";
@@ -640,6 +657,13 @@ export function TaskList({
     });
   };
 
+  const allDoneTasks = filterAndSortTasks(
+    filteredTasks.filter((t) => t.status === "done"),
+    columnSortBy.done,
+    columnFilterPriority.done,
+    columnFilterType.done,
+  );
+
   const groupedTasks = {
     todo: filterAndSortTasks(
       filteredTasks.filter((t) => t.status === "todo"),
@@ -659,13 +683,10 @@ export function TaskList({
       columnFilterPriority.review,
       columnFilterType.review,
     ),
-    done: filterAndSortTasks(
-      filteredTasks.filter((t) => t.status === "done"),
-      columnSortBy.done,
-      columnFilterPriority.done,
-      columnFilterType.done,
-    ),
+    done: allDoneTasks.slice(0, doneTasksLimit),
   };
+
+  const hasMoreDoneTasks = allDoneTasks.length > doneTasksLimit;
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -752,16 +773,16 @@ export function TaskList({
 
             <div className="w-full sm:w-2/3">
               {totalTasks > 0 && (
-                <div className="relative overflow-hidden border border-border/50 rounded-md">
+                <div className="relative overflow-hidden border border-blue-500/30 rounded-md shadow-sm shadow-blue-500/20">
                   <div
-                    className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary/60 transition-all duration-700 ease-out"
+                    className="absolute inset-0 bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-400 transition-all duration-700 ease-out"
                     style={{
                       width: `${completionPercentage}%`,
                     }}
                   />
 
                   <div
-                    className="absolute inset-0 bg-gradient-to-r from-muted/30 to-muted/10"
+                    className="absolute inset-0 bg-gradient-to-r from-blue-500/15 via-blue-500/10 to-transparent"
                     style={{
                       left: `${completionPercentage}%`,
                     }}
@@ -769,14 +790,14 @@ export function TaskList({
 
                   <div className="relative px-4 py-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                      <span className="text-sm font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                         Overall Progress
                       </span>
-                      <span className="text-xs text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                      <span className="text-xs text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                         {completedTasks} of {totalTasks} tasks
                       </span>
                     </div>
-                    <span className="text-lg font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                    <span className="text-lg font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                       {completionPercentage}%
                     </span>
                   </div>
@@ -814,8 +835,14 @@ export function TaskList({
                 project,
                 taskCount: tasks.filter((t) => t.projectId === project._id)
                   .length,
+                // Only include tasks not done, scoped to this project
+                typeOP: tasks.filter(
+                  (t) => t.projectId === project._id && t.status !== "done",
+                ),
               }))
-              .filter(({ taskCount }) => taskCount > 0)
+              // Only keep projects that have at least one non-done task
+              .filter(({ typeOP }) => typeOP.length > 0)
+              // Optionally, you can still sort by total tasks if you want
               .sort((a, b) => b.taskCount - a.taskCount)
               .map(({ project }) => (
                 <Button
@@ -824,7 +851,7 @@ export function TaskList({
                     filterProject === project._id ? "default" : "outline"
                   }
                   size="sm"
-                  className={`h-8 rounded-full`}
+                  className="h-8 rounded-full"
                   onClick={() => {
                     setFilterProject(project._id);
                     if (onViewChange) onViewChange("all");
@@ -876,6 +903,12 @@ export function TaskList({
                     }))
                   }
                   isLoading={isLoading}
+                  hasMore={status === "done" ? hasMoreDoneTasks : false}
+                  onLoadMore={
+                    status === "done"
+                      ? () => setDoneTasksLimit((prev) => prev + 5)
+                      : undefined
+                  }
                 />
               ),
             )}

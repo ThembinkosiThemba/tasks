@@ -71,12 +71,12 @@ export function MeetingNoteDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Content (Markdown supported)</Label>
+            <Label htmlFor="content">Content</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Start writing your notes... (Markdown supported)"
+              placeholder="Start writing your notes...)"
               rows={20}
               className="font-normal text-base leading-relaxed"
               required
@@ -88,14 +88,12 @@ export function MeetingNoteDialog({
               Date will be set to today
             </span>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Save</Button>
+              <Button variant={"secondary"} type="submit">
+                Save
+              </Button>
             </div>
           </div>
         </form>

@@ -88,11 +88,6 @@ export default function Dashboard() {
         e.preventDefault();
         setProjectDialogOpen(true);
       }
-      // Cmd/Ctrl + S for schedule task
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
-        setScheduleDialogOpen(true);
-      }
       // Cmd/Ctrl + 1 for all tasks
       if ((e.metaKey || e.ctrlKey) && e.key === "1") {
         e.preventDefault();
@@ -220,9 +215,10 @@ export default function Dashboard() {
   };
 
   const handleSaveNote = async (noteData: Partial<MeetingNote>) => {
-    if (editingNote) {
+    // Check for _id in noteData first (for inline editor), then fall back to editingNote state (for dialog)
+    if (noteData._id || editingNote) {
       await updateNote({
-        noteId: editingNote._id,
+        noteId: (noteData._id || editingNote!._id) as Id<"meetingNotes">,
         title: noteData.title!,
         content: noteData.content!,
         date: noteData.date!,
@@ -429,7 +425,6 @@ export default function Dashboard() {
           setTaskDialogOpen(true);
         }}
         onAddProject={() => setProjectDialogOpen(true)}
-        onAddSchedule={() => setScheduleDialogOpen(true)}
         onAddNote={() => {
           setEditingNote(undefined);
           setNoteDialogOpen(true);

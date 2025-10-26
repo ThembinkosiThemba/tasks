@@ -15,12 +15,12 @@ export const getLists = query({
           title: v.string(),
           status: v.union(v.literal("checked"), v.literal("unchecked")),
           price: v.optional(v.number()),
-        })
+        }),
       ),
       userId: v.id("users"),
     }),
   ),
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
       throw new Error("Not authenticated");
@@ -45,8 +45,8 @@ export const createList = mutation({
           title: v.string(),
           status: v.union(v.literal("checked"), v.literal("unchecked")),
           price: v.optional(v.number()),
-        })
-      )
+        }),
+      ),
     ),
   },
   returns: v.id("lists"),
@@ -78,8 +78,8 @@ export const updateList = mutation({
           title: v.string(),
           status: v.union(v.literal("checked"), v.literal("unchecked")),
           price: v.optional(v.number()),
-        })
-      )
+        }),
+      ),
     ),
   },
   returns: v.null(),
@@ -215,7 +215,9 @@ export const removeListItem = mutation({
       throw new Error("Invalid item index");
     }
 
-    const updatedItems = list.items.filter((_, index) => index !== args.itemIndex);
+    const updatedItems = list.items.filter(
+      (_, index) => index !== args.itemIndex,
+    );
 
     await ctx.db.patch(args.listId, {
       items: updatedItems,

@@ -26,7 +26,6 @@ interface CommandPaletteProps {
   onNavigate: (view: string) => void;
   onAddTask: () => void;
   onAddProject: () => void;
-  onAddSchedule: () => void;
   onAddNote: () => void;
   onSelectTask: (task: Task) => void;
 }
@@ -39,7 +38,6 @@ export function CommandPalette({
   onNavigate,
   onAddTask,
   onAddProject,
-  onAddSchedule,
   onAddNote,
   onSelectTask,
 }: CommandPaletteProps) {
@@ -95,11 +93,6 @@ export function CommandPalette({
             <FolderKanban className="mr-2 h-4 w-4" />
             <span>New Project</span>
             <span className="ml-auto text-xs text-muted-foreground">⌘P</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(onAddSchedule)}>
-            <Calendar className="mr-2 h-4 w-4" />
-            <span>Schedule Task</span>
-            <span className="ml-auto text-xs text-muted-foreground">⌘S</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(onAddNote)}>
             <FileText className="mr-2 h-4 w-4" />
