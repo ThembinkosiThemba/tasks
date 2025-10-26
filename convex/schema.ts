@@ -27,7 +27,9 @@ export default defineSchema({
       v.literal("done"),
     ),
     priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
-    type: v.optional(v.union(v.literal("bug"), v.literal("feature"), v.literal("general"))),
+    type: v.optional(
+      v.union(v.literal("bug"), v.literal("feature"), v.literal("general")),
+    ),
     completedAt: v.optional(v.number()),
     reminderDate: v.optional(v.number()),
     userId: v.id("users"),
@@ -57,6 +59,19 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_and_date", ["userId", "date"]),
+
+  lists: defineTable({
+    title: v.string(),
+    type: v.union(v.literal("pricing"), v.literal("general")),
+    items: v.array(
+      v.object({
+        title: v.string(),
+        status: v.union(v.literal("checked"), v.literal("unchecked")),
+        price: v.optional(v.number()),
+      })
+    ),
+    userId: v.id("users"),
+  }).index("by_user", ["userId"]),
 
   notifications: defineTable({
     type: v.string(),

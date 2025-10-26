@@ -10,6 +10,7 @@ import {
   DragEndEvent,
   DragOverEvent,
 } from "@dnd-kit/core";
+import type { DailyTask } from "@/types";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -50,17 +51,13 @@ import { cn, getPriorityColor } from "@/lib/utils";
 interface TaskListProps {
   tasks: Task[];
   projects: Project[];
-  // notifications: Notification[];
-  // unreadCount: number;
+  dailyTasks?: DailyTask[];
   onAddTask: () => void;
   onViewTask: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: Id<"tasks">) => void;
   onUpdateTaskStatus: (taskId: Id<"tasks">, status: TaskStatus) => void;
   onScheduleTask: (task: Task) => void;
-  // onMarkNotificationAsRead: (notificationId: Id<"notifications">) => void;
-  // onMarkAllNotificationsAsRead: () => void;
-  // onDeleteNotification: (notificationId: Id<"notifications">) => void;
   onViewChange?: (view: string) => void;
   isLoading?: boolean;
 }
@@ -68,11 +65,11 @@ interface TaskListProps {
 interface TaskCardProps {
   task: Task;
   project?: Project;
+  isScheduled?: boolean;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onSchedule: () => void;
-  onToggleStatus: () => void;
   onUpdateStatus: (newStatus: TaskStatus) => void;
   isDragging?: boolean;
 }
@@ -80,14 +77,16 @@ interface TaskCardProps {
 function TaskCard({
   task,
   project,
+  isScheduled = false,
   onView,
   onEdit,
   onDelete,
   onSchedule,
-  onToggleStatus,
   onUpdateStatus,
   isDragging = false,
 }: TaskCardProps) {
+  const [updatingElement, setUpdatingElement] = useState<string | null>(null);
+
   const {
     attributes,
     listeners,
@@ -96,6 +95,18 @@ function TaskCard({
     transition,
     isDragging: isSortableDragging,
   } = useSortable({ id: task._id });
+
+  const handleStatusUpdate = async (
+    newStatus: TaskStatus,
+    element: "prev" | "next" | "toggle",
+  ) => {
+    setUpdatingElement(element);
+    try {
+      await onUpdateStatus(newStatus);
+    } finally {
+      setTimeout(() => setUpdatingElement(null), 300);
+    }
+  };
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -170,15 +181,22 @@ function TaskCard({
           {...attributes}
           {...listeners}
           className="mt-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+          disabled={updatingElement !== null}
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
 
         <button
-          onClick={onToggleStatus}
+          onClick={() => {
+            const newStatus = task.status === "done" ? "todo" : "done";
+            handleStatusUpdate(newStatus, "toggle");
+          }}
           className="mt-1 transition-transform hover:scale-110 shrink-0"
+          disabled={updatingElement !== null}
         >
-          {task.status === "done" ? (
+          {updatingElement === "toggle" ? (
+            <div className="h-5 w-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+          ) : task.status === "done" ? (
             <CheckCircle2 className="h-5 w-5 text-primary" />
           ) : (
             <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
@@ -243,6 +261,15 @@ function TaskCard({
                 At Risk
               </Badge>
             )}
+            {isScheduled && (
+              <Badge
+                variant="outline"
+                className="text-xs font-medium border-none text-primary ml-auto"
+                title="Task is scheduled"
+              >
+                <Clock className="h-5 w-5" />
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -255,11 +282,16 @@ function TaskCard({
               className="h-8 w-8"
               onClick={(e) => {
                 e.stopPropagation();
-                onUpdateStatus(prevStatus);
+                handleStatusUpdate(prevStatus, "prev");
               }}
+              disabled={updatingElement !== null}
               title={`Move to ${prevStatus}`}
             >
-              <ChevronLeft className="h-4 w-4" />
+              {updatingElement === "prev" ? (
+                <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
             </Button>
           )}
           {nextStatus && (
@@ -269,11 +301,16 @@ function TaskCard({
               className="h-8 w-8"
               onClick={(e) => {
                 e.stopPropagation();
-                onUpdateStatus(nextStatus);
+                handleStatusUpdate(nextStatus, "next");
               }}
+              disabled={updatingElement !== null}
               title={`Move to ${nextStatus}`}
             >
-              <ChevronRight className="h-4 w-4" />
+              {updatingElement === "next" ? (
+                <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
             </Button>
           )}
           <DropdownMenu>
@@ -326,11 +363,11 @@ function DroppableColumn({
   status,
   tasks,
   projects,
+  dailyTasks = [],
   onView,
   onEdit,
   onDelete,
   onSchedule,
-  onToggleStatus,
   onUpdateTaskStatus,
   onSortChange,
   onFilterPriorityChange,
@@ -340,11 +377,11 @@ function DroppableColumn({
   status: TaskStatus;
   tasks: Task[];
   projects: Project[];
+  dailyTasks?: DailyTask[];
   onView: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: Id<"tasks">) => void;
   onSchedule: (task: Task) => void;
-  onToggleStatus: (taskId: Id<"tasks">) => void;
   onUpdateTaskStatus: (taskId: Id<"tasks">, status: TaskStatus) => void;
   sortOrder: "newest" | "oldest";
   onSortChange: (order: "newest" | "oldest") => void;
@@ -356,6 +393,9 @@ function DroppableColumn({
 }) {
   const getProject = (projectId?: string) =>
     projects.find((p) => p._id === projectId);
+
+  const isTaskScheduled = (taskId: string) =>
+    dailyTasks.some((dt) => dt.taskId === taskId);
 
   const statusConfig = {
     todo: { label: "To Do", color: "bg-blue-500", icon: Circle },
@@ -469,6 +509,7 @@ function DroppableColumn({
               <TaskCardSkeleton />
               <TaskCardSkeleton />
               <TaskCardSkeleton />
+              <TaskCardSkeleton />
             </>
           ) : tasks.length === 0 ? (
             <div className="bg-card/30 border-2 border-dashed border-border/50 rounded-lg p-8 text-center">
@@ -481,11 +522,11 @@ function DroppableColumn({
                 key={task._id}
                 task={task}
                 project={getProject(task.projectId)}
+                isScheduled={isTaskScheduled(task._id)}
                 onView={() => onView(task)}
                 onEdit={() => onEdit(task)}
                 onDelete={() => onDelete(task._id)}
                 onSchedule={() => onSchedule(task)}
-                onToggleStatus={() => onToggleStatus(task._id)}
                 onUpdateStatus={(newStatus) => {
                   const fullTask = tasks.find((t) => t._id === task._id);
                   if (fullTask) {
@@ -504,17 +545,13 @@ function DroppableColumn({
 export function TaskList({
   tasks,
   projects,
-  // notifications,
-  // unreadCount,
+  dailyTasks = [],
   onAddTask,
   onViewTask,
   onEditTask,
   onDeleteTask,
   onUpdateTaskStatus,
   onScheduleTask,
-  // onMarkNotificationAsRead,
-  // onMarkAllNotificationsAsRead,
-  // onDeleteNotification,
   onViewChange,
   isLoading = false,
 }: TaskListProps) {
@@ -585,7 +622,6 @@ export function TaskList({
   ): Task[] => {
     let filtered = tasks;
 
-    // Filter by priority
     if (priority) {
       filtered = filtered.filter((t) => t.priority === priority);
     }
@@ -692,13 +728,6 @@ export function TaskList({
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {/* <NotificationsDropdown
-                notifications={notifications}
-                unreadCount={unreadCount}
-                onMarkAsRead={onMarkNotificationAsRead}
-                onMarkAllAsRead={onMarkAllNotificationsAsRead}
-                onDelete={onDeleteNotification}
-              /> */}
               <Button
                 onClick={onAddTask}
                 size="lg"
@@ -801,10 +830,6 @@ export function TaskList({
                     if (onViewChange) onViewChange("all");
                   }}
                 >
-                  {/* <div
-                    className="h-2 w-2 rounded-full mr-2"
-                    style={{ backgroundColor: project.color }}
-                  /> */}
                   {project.name}
                 </Button>
               ))}
@@ -826,6 +851,7 @@ export function TaskList({
                   status={status}
                   tasks={groupedTasks[status]}
                   projects={projects}
+                  dailyTasks={dailyTasks}
                   onView={onViewTask}
                   onEdit={onEditTask}
                   onDelete={onDeleteTask}
@@ -849,12 +875,6 @@ export function TaskList({
                       [status]: type,
                     }))
                   }
-                  onToggleStatus={(taskId) => {
-                    const task = tasks.find((t) => t._id === taskId);
-                    if (!task) return;
-                    const newStatus = task.status === "done" ? "todo" : "done";
-                    onUpdateTaskStatus(taskId, newStatus);
-                  }}
                   isLoading={isLoading}
                 />
               ),
@@ -871,7 +891,6 @@ export function TaskList({
                   onEdit={() => {}}
                   onDelete={() => {}}
                   onSchedule={() => {}}
-                  onToggleStatus={() => {}}
                   onUpdateStatus={() => {}}
                   isDragging
                 />

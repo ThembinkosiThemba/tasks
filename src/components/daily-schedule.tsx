@@ -8,9 +8,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
+  MoreHorizontal,
+  ArrowRight,
+  Trash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Task, DailyTask, Project } from "@/types";
 import type { Id } from "../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
@@ -23,6 +32,14 @@ interface DailyScheduleProps {
   onDateChange: (date: string) => void;
   onAddSchedule: () => void;
   onToggleComplete: (dailyTaskId: Id<"dailyTasks">) => void;
+  onUpdateDailyTask: (
+    dailyTaskId: Id<"dailyTasks">,
+    date: string,
+    startTime?: string,
+    endTime?: string,
+    completed?: boolean
+  ) => void;
+  onRemoveDailyTask: (dailyTaskId: Id<"dailyTasks">) => void;
 }
 
 export function DailySchedule({
@@ -33,8 +50,23 @@ export function DailySchedule({
   onDateChange,
   onAddSchedule,
   onToggleComplete,
+  onUpdateDailyTask,
+  onRemoveDailyTask,
 }: DailyScheduleProps) {
   const [filterProject, setFilterProject] = useState<string | null>(null);
+
+  const moveToTomorrow = (dailyTask: DailyTask) => {
+    const tomorrow = new Date(selectedDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDate = tomorrow.toISOString().split("T")[0];
+    onUpdateDailyTask(
+      dailyTask._id,
+      tomorrowDate,
+      dailyTask.startTime,
+      dailyTask.endTime,
+      dailyTask.completed
+    );
+  };
 
   const getTask = (taskId: string) => tasks.find((t) => t._id === taskId);
   const getProject = (projectId?: string) =>
@@ -262,7 +294,7 @@ export function DailySchedule({
                       return (
                         <div
                           key={dailyTask._id}
-                          className="bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4 md:p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
+                          className="group bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4 md:p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
                           <div className="flex items-start gap-3 md:gap-4">
@@ -332,6 +364,33 @@ export function DailySchedule({
                                 </Badge>
                               </div>
                             </div>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-dark dark">
+                                <DropdownMenuItem
+                                  onClick={() => moveToTomorrow(dailyTask)}
+                                >
+                                  <ArrowRight className="mr-2 h-4 w-4" />
+                                  Move to Tomorrow
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => onRemoveDailyTask(dailyTask._id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash className="mr-2 h-4 w-4" />
+                                  Remove from Schedule
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       );
@@ -358,7 +417,7 @@ export function DailySchedule({
                         return (
                           <div
                             key={dailyTask._id}
-                            className="bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-border/30 rounded-lg p-3 md:p-4 hover:border-primary/30 hover:shadow-md transition-all duration-200"
+                            className="group bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-border/30 rounded-lg p-3 md:p-4 hover:border-primary/30 hover:shadow-md transition-all duration-200"
                           >
                             <div className="flex items-start gap-3">
                               <button
@@ -410,6 +469,33 @@ export function DailySchedule({
                                   </Badge>
                                 </div>
                               </div>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                  >
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-dark dark">
+                                  <DropdownMenuItem
+                                    onClick={() => moveToTomorrow(dailyTask)}
+                                  >
+                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                    Move to Tomorrow
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => onRemoveDailyTask(dailyTask._id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash className="mr-2 h-4 w-4" />
+                                    Remove from Schedule
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         );

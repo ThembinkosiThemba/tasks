@@ -45,3 +45,6 @@ export const getStatusConfig = (status: Task["status"]) => {
       return { label: "Done", color: "bg-green-500", icon: CheckCircle2 };
   }
 };
+
+export const cardGradient =
+  "bg-gradient-to-br from-primary/5 to-primary/[0.02] hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10";

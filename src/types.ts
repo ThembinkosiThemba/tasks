@@ -64,3 +64,18 @@ export interface Notification {
   read: boolean;
   userId: Id<"users">;
 }
+
+export interface ListItem {
+  title: string;
+  status: "checked" | "unchecked";
+  price?: number;
+}
+
+export interface List {
+  _id: Id<"lists">;
+  _creationTime: number;
+  title: string;
+  type: "pricing" | "general";
+  items: ListItem[];
+  userId: Id<"users">;
+}

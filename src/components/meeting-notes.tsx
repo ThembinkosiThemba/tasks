@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   Plus,
   FileText,
@@ -61,7 +61,7 @@ function NoteCard({ note, onEdit, onDelete, onView }: NoteCardProps) {
   return (
     <div
       className={cn(
-        "group bg-gradient-to-br from-card/80 to-card/60 border border-border/50 rounded-lg p-5 transition-all duration-200",
+        "group bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-border/50 rounded-lg p-5 transition-all duration-200",
         "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
         "animate-in fade-in-0 slide-in-from-bottom-2",
       )}
@@ -94,7 +94,10 @@ function NoteCard({ note, onEdit, onDelete, onView }: NoteCardProps) {
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit note
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-destructive"
+                >
                   <Trash className="mr-2 h-4 w-4" />
                   Delete note
                 </DropdownMenuItem>
@@ -134,15 +137,12 @@ export function MeetingNotes({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleCreateNote = () => {
     setIsCreatingNew(true);
     setEditingNote(null);
     setTitle("");
     setContent("");
-    setLastSaved(null);
   };
 
   const handleEditNoteClick = (note: MeetingNote) => {
@@ -150,11 +150,10 @@ export function MeetingNotes({
     setEditingNote(note);
     setTitle(note.title);
     setContent(note.content);
-    setLastSaved(null);
   };
 
-  // Auto-save functionality with debouncing
-  const autoSave = () => {
+  // Manual save functionality
+  const handleSave = () => {
     if (!title.trim() && !content.trim()) return;
 
     setIsSaving(true);
@@ -170,38 +169,17 @@ export function MeetingNotes({
       onSaveNote(noteData);
     }
 
-    setLastSaved(new Date());
-    setTimeout(() => setIsSaving(false), 500);
+    setTimeout(() => {
+      setIsSaving(false);
+      handleCancel();
+    }, 500);
   };
-
-  // Trigger auto-save when title or content changes
-  useEffect(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      if (title.trim() || content.trim()) {
-        autoSave();
-      }
-    }, 2000); // Auto-save after 2 seconds of inactivity
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [title, content]);
 
   const handleCancel = () => {
     setIsCreatingNew(false);
     setEditingNote(null);
     setTitle("");
     setContent("");
-    setLastSaved(null);
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
   };
 
   const filteredNotes = notes
@@ -215,19 +193,6 @@ export function MeetingNotes({
 
   // Show editor if creating or editing
   const showEditor = isCreatingNew || editingNote !== null;
-
-  // Get formatted save status
-  const getSaveStatus = () => {
-    if (isSaving) return "Saving...";
-    if (lastSaved) {
-      const now = new Date();
-      const diff = now.getTime() - lastSaved.getTime();
-      if (diff < 60000) return "Saved just now";
-      if (diff < 3600000) return `Saved ${Math.floor(diff / 60000)}m ago`;
-      return "Saved";
-    }
-    return "Not saved";
-  };
 
   // Full-window editor view
   if (showEditor) {
@@ -246,21 +211,23 @@ export function MeetingNotes({
               Back
             </Button>
             <div className="flex items-center gap-3">
-              {isSaving ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                  Saving...
-                </div>
-              ) : lastSaved ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Check className="h-3.5 w-3.5 text-green-500" />
-                  {getSaveStatus()}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  Type to start auto-saving
-                </div>
-              )}
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || (!title.trim() && !content.trim())}
+                size="sm"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3.5 w-3.5 mr-2" />
+                    Save
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
@@ -298,7 +265,8 @@ export function MeetingNotes({
                 Meeting Notes
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}
+                {filteredNotes.length}{" "}
+                {filteredNotes.length === 1 ? "note" : "notes"}
               </p>
             </div>
             <Button

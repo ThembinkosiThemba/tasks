@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/sidebar";
 import { TaskList } from "@/components/task-list";
 import { DailySchedule } from "@/components/daily-schedule";
 import { MeetingNotes } from "@/components/meeting-notes";
+import { Lists } from "@/components/lists";
 import { ProjectPage } from "@/components/project-page";
 import { StatsPage } from "@/components/stats-page";
 import { TaskDialog } from "@/components/task-dialog";
@@ -28,8 +29,7 @@ export default function Dashboard() {
   const isTasksLoading = tasksQuery === undefined;
   const dailyTasks = useQuery(api.dailyTasks.list, {}) ?? [];
   const meetingNotes = useQuery(api.notes.list) ?? [];
-  // const notifications = useQuery(api.notifications.list) ?? [];
-  // const unreadCount = useQuery(api.notifications.getUnreadCount) ?? 0;
+  const lists = useQuery(api.lists.getLists) ?? [];
 
   // Convex mutations
   const createProject = useMutation(api.projects.create);
@@ -40,16 +40,18 @@ export default function Dashboard() {
   const deleteTask = useMutation(api.tasks.remove);
   const completeTask = useMutation(api.tasks.complete);
   const createDailyTask = useMutation(api.dailyTasks.create);
+  const updateDailyTask = useMutation(api.dailyTasks.update);
+  const removeDailyTask = useMutation(api.dailyTasks.remove);
   const toggleDailyTaskComplete = useMutation(api.dailyTasks.toggleComplete);
   const createNote = useMutation(api.notes.create);
   const updateNote = useMutation(api.notes.update);
   const deleteNote = useMutation(api.notes.remove);
-
-  // const markNotificationAsRead = useMutation(api.notifications.markAsRead);
-  // const markAllNotificationsAsRead = useMutation(
-  //   api.notifications.markAllAsRead,
-  // );
-  // const deleteNotification = useMutation(api.notifications.remove);
+  const createList = useMutation(api.lists.createList);
+  const updateList = useMutation(api.lists.updateList);
+  const deleteList = useMutation(api.lists.removeList);
+  const addListItem = useMutation(api.lists.addListItem);
+  const updateListItem = useMutation(api.lists.updateListItem);
+  const removeListItem = useMutation(api.lists.removeListItem);
 
   const [selectedView, setSelectedView] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState(
@@ -184,10 +186,8 @@ export default function Dashboard() {
     if (!task) return;
 
     if (newStatus === "done") {
-      // Use completeTask mutation for done status
       await completeTask({ taskId });
     } else {
-      // Use updateTask for other statuses
       await updateTask({
         taskId,
         title: task.title,
@@ -241,21 +241,66 @@ export default function Dashboard() {
     await deleteNote({ noteId });
   };
 
-  // const handleMarkNotificationAsRead = async (
-  //   notificationId: Id<"notifications">,
-  // ) => {
-  //   await markNotificationAsRead({ notificationId });
-  // };
+  const handleCreateList = async (title: string, type: "pricing" | "general") => {
+    await createList({ title, type });
+  };
 
-  // const handleMarkAllNotificationsAsRead = async () => {
-  //   await markAllNotificationsAsRead();
-  // };
+  const handleUpdateList = async (
+    listId: Id<"lists">,
+    title?: string,
+    type?: "pricing" | "general",
+  ) => {
+    await updateList({ _id: listId, title, type });
+  };
 
-  // const handleDeleteNotification = async (
-  //   notificationId: Id<"notifications">,
-  // ) => {
-  //   await deleteNotification({ notificationId });
-  // };
+  const handleDeleteList = async (listId: Id<"lists">) => {
+    await deleteList({ _id: listId });
+  };
+
+  const handleAddListItem = async (
+    listId: Id<"lists">,
+    title: string,
+    price?: number,
+  ) => {
+    await addListItem({ listId, title, price });
+  };
+
+  const handleUpdateListItem = async (
+    listId: Id<"lists">,
+    itemIndex: number,
+    title?: string,
+    status?: "checked" | "unchecked",
+    price?: number,
+  ) => {
+    await updateListItem({ listId, itemIndex, title, status, price });
+  };
+
+  const handleRemoveListItem = async (
+    listId: Id<"lists">,
+    itemIndex: number,
+  ) => {
+    await removeListItem({ listId, itemIndex });
+  };
+
+  const handleUpdateDailyTask = async (
+    dailyTaskId: Id<"dailyTasks">,
+    date: string,
+    startTime?: string,
+    endTime?: string,
+    completed?: boolean,
+  ) => {
+    await updateDailyTask({
+      dailyTaskId,
+      date,
+      startTime,
+      endTime,
+      completed: completed ?? false,
+    });
+  };
+
+  const handleRemoveDailyTask = async (dailyTaskId: Id<"dailyTasks">) => {
+    await removeDailyTask({ dailyTaskId });
+  };
 
   // Check if viewing a project page
   const isProjectView = selectedView.startsWith("project:");
@@ -278,15 +323,6 @@ export default function Dashboard() {
       <MobileHeader
         onMenuOpen={() => setMobileMenuOpen(true)}
         onCommandOpen={() => setCommandPaletteOpen(true)}
-        // notificationsSlot={
-        //   <NotificationsDropdown
-        //     notifications={notifications}
-        //     unreadCount={unreadCount}
-        //     onMarkAsRead={(id) => void handleMarkNotificationAsRead(id)}
-        //     onMarkAllAsRead={() => void handleMarkAllNotificationsAsRead()}
-        //     onDelete={(id) => void handleDeleteNotification(id)}
-        //   />
-        // }
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -312,9 +348,23 @@ export default function Dashboard() {
             onDateChange={setSelectedDate}
             onAddSchedule={() => setScheduleDialogOpen(true)}
             onToggleComplete={(id) => void handleToggleDailyComplete(id)}
+            onUpdateDailyTask={(id, date, start, end, completed) =>
+              void handleUpdateDailyTask(id, date, start, end, completed)
+            }
+            onRemoveDailyTask={(id) => void handleRemoveDailyTask(id)}
           />
         ) : selectedView === "stats" ? (
           <StatsPage />
+        ) : selectedView === "lists" ? (
+          <Lists
+            lists={lists}
+            onCreateList={handleCreateList}
+            onUpdateList={handleUpdateList}
+            onDeleteList={handleDeleteList}
+            onAddItem={handleAddListItem}
+            onUpdateItem={handleUpdateListItem}
+            onRemoveItem={handleRemoveListItem}
+          />
         ) : selectedView === "notes" ? (
           <MeetingNotes
             notes={meetingNotes}
@@ -341,8 +391,7 @@ export default function Dashboard() {
           <TaskList
             tasks={filteredTasks}
             projects={projects}
-            // notifications={notifications}
-            // unreadCount={unreadCount}
+            dailyTasks={dailyTasks}
             onAddTask={() => {
               setEditingTask(undefined);
               setTaskDialogOpen(true);
@@ -363,13 +412,6 @@ export default function Dashboard() {
               setSchedulingTask(task);
               setScheduleDialogOpen(true);
             }}
-            // onMarkNotificationAsRead={(id) =>
-            //   void handleMarkNotificationAsRead(id)
-            // }
-            // onMarkAllNotificationsAsRead={() =>
-            //   void handleMarkAllNotificationsAsRead()
-            // }
-            // onDeleteNotification={(id) => void handleDeleteNotification(id)}
             onViewChange={setSelectedView}
             isLoading={isTasksLoading}
           />

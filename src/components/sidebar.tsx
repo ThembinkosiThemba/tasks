@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   Trash,
   BarChart3,
+  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -129,7 +130,19 @@ export function Sidebar({
         </Button>
 
         <Button
-          disabled
+          variant={selectedView === "lists" ? "secondary" : "ghost"}
+          className={cn(
+            "w-full h-10 font-medium transition-all hover:translate-x-1",
+            collapsed ? "justify-center px-0" : "justify-start",
+          )}
+          onClick={() => handleViewChange("lists")}
+          title={collapsed ? "Lists" : undefined}
+        >
+          <List className={cn("h-4 w-4", !collapsed && "mr-3")} />
+          {!collapsed && "Lists"}
+        </Button>
+
+        <Button
           variant={selectedView === "notes" ? "secondary" : "ghost"}
           className={cn(
             "w-full h-10 font-medium transition-all hover:translate-x-1",
@@ -204,7 +217,9 @@ export function Sidebar({
                                   : "ghost"
                               }
                               className="flex-1 justify-start h-10 font-medium transition-all hover:translate-x-1 group"
-                              onClick={() => handleViewChange(`project:${project._id}`)}
+                              onClick={() =>
+                                handleViewChange(`project:${project._id}`)
+                              }
                             >
                               <div
                                 className="mr-3 h-3 w-3 rounded-full ring-2 ring-offset-2 ring-offset-card transition-all group-hover:scale-110"

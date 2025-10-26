@@ -113,6 +113,19 @@ export const create = mutation({
       throw new Error("Task not found or unauthorized");
     }
 
+    // Check if task is already scheduled for this date
+    const existingSchedule = await ctx.db
+      .query("dailyTasks")
+      .withIndex("by_user_and_date", (q) =>
+        q.eq("userId", userId).eq("date", args.date)
+      )
+      .filter((q) => q.eq(q.field("taskId"), args.taskId))
+      .first();
+
+    if (existingSchedule) {
+      throw new Error("Task is already scheduled for this date");
+    }
+
     const dailyTaskId = await ctx.db.insert("dailyTasks", {
       taskId: args.taskId,
       date: args.date,
