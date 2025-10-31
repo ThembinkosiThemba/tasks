@@ -191,6 +191,83 @@ export function StatsPage() {
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Productivity Trends */}
+          <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/[0.02] border-border/50">
+            <div className="flex items-center gap-2 mb-6">
+              <Activity className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Productivity Trend</h3>
+            </div>
+            <ChartContainer
+              config={{
+                created: { label: "Created", color: COLORS.info },
+                completed: { label: "Completed", color: COLORS.success },
+              }}
+            >
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={productivity.daily.slice(-14)}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }
+                  />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Area
+                    type="monotone"
+                    dataKey="created"
+                    stackId="1"
+                    stroke={COLORS.info}
+                    fill={COLORS.info}
+                    fillOpacity={0.6}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="completed"
+                    stackId="2"
+                    stroke={COLORS.success}
+                    fill={COLORS.success}
+                    fillOpacity={0.6}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </Card>
+          {/* Completion Time by Priority */}
+          <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/[0.02] border-border/50">
+            <div className="flex items-center gap-2 mb-6">
+              <Clock className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">
+                Avg. Completion Time by Priority
+              </h3>
+            </div>
+            <ChartContainer
+              config={{
+                averageTime: {
+                  label: "Days",
+                  color: COLORS.primary,
+                },
+              }}
+            >
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={completionTime.byPriority}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="priority" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    dataKey="averageTime"
+                    fill={COLORS.warning}
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </Card>
           {/* Task Distribution by Status */}
           <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/[0.02] border-border/50">
             <div className="flex items-center gap-2 mb-6">
@@ -262,85 +339,6 @@ export function StatsPage() {
                     ))}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </Card>
-
-          {/* Completion Time by Priority */}
-          <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/[0.02] border-border/50">
-            <div className="flex items-center gap-2 mb-6">
-              <Clock className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">
-                Avg. Completion Time by Priority
-              </h3>
-            </div>
-            <ChartContainer
-              config={{
-                averageTime: {
-                  label: "Days",
-                  color: COLORS.primary,
-                },
-              }}
-            >
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={completionTime.byPriority}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                  <XAxis dataKey="priority" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar
-                    dataKey="averageTime"
-                    fill={COLORS.warning}
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </Card>
-
-          {/* Productivity Trends */}
-          <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/[0.02] border-border/50">
-            <div className="flex items-center gap-2 mb-6">
-              <Activity className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Productivity Trend</h3>
-            </div>
-            <ChartContainer
-              config={{
-                created: { label: "Created", color: COLORS.info },
-                completed: { label: "Completed", color: COLORS.success },
-              }}
-            >
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={productivity.daily.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
-                    }
-                  />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="created"
-                    stackId="1"
-                    stroke={COLORS.info}
-                    fill={COLORS.info}
-                    fillOpacity={0.6}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="completed"
-                    stackId="2"
-                    stroke={COLORS.success}
-                    fill={COLORS.success}
-                    fillOpacity={0.6}
-                  />
-                </AreaChart>
               </ResponsiveContainer>
             </ChartContainer>
           </Card>

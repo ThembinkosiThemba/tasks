@@ -46,6 +46,8 @@ export default function Dashboard() {
   const createNote = useMutation(api.notes.create);
   const updateNote = useMutation(api.notes.update);
   const deleteNote = useMutation(api.notes.remove);
+  const togglePinNote = useMutation(api.notes.togglePin);
+  const toggleStarNote = useMutation(api.notes.toggleStar);
   const createList = useMutation(api.lists.createList);
   const updateList = useMutation(api.lists.updateList);
   const deleteList = useMutation(api.lists.removeList);
@@ -239,6 +241,14 @@ export default function Dashboard() {
     await deleteNote({ noteId });
   };
 
+  const handleTogglePinNote = async (noteId: Id<"meetingNotes">) => {
+    await togglePinNote({ noteId });
+  };
+
+  const handleToggleStarNote = async (noteId: Id<"meetingNotes">) => {
+    await toggleStarNote({ noteId });
+  };
+
   const handleCreateList = async (title: string, type: "pricing" | "general") => {
     await createList({ title, type });
   };
@@ -376,6 +386,8 @@ export default function Dashboard() {
             }}
             onDeleteNote={(id) => void handleDeleteNote(id)}
             onSaveNote={handleSaveNote}
+            onTogglePin={(id) => void handleTogglePinNote(id)}
+            onToggleStar={(id) => void handleToggleStarNote(id)}
           />
         ) : isProjectView && currentProject ? (
           <ProjectPage

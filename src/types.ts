@@ -51,6 +51,8 @@ export interface MeetingNote {
   content: string;
   date: string;
   tags?: string[];
+  pinned?: boolean;
+  starred?: boolean;
   userId: Id<"users">;
 }
 

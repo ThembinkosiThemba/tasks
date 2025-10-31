@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   FileText,
-  MoreHorizontal,
   Pencil,
   Trash,
   Search,
@@ -11,15 +10,11 @@ import {
   ArrowLeft,
   Check,
   Loader,
+  Pin,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +34,8 @@ interface MeetingNotesProps {
   onEditNote: (note: MeetingNote) => void;
   onDeleteNote: (noteId: Id<"meetingNotes">) => void;
   onSaveNote: (noteData: Partial<MeetingNote>) => Promise<Id<"meetingNotes"> | void>;
+  onTogglePin: (noteId: Id<"meetingNotes">) => void;
+  onToggleStar: (noteId: Id<"meetingNotes">) => void;
 }
 
 interface NoteCardProps {
@@ -46,9 +43,11 @@ interface NoteCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onView: () => void;
+  onTogglePin: () => void;
+  onToggleStar: () => void;
 }
 
-function NoteCard({ note, onEdit, onDelete, onView }: NoteCardProps) {
+function NoteCard({ note, onEdit, onDelete, onView, onTogglePin, onToggleStar }: NoteCardProps) {
   const formattedDate = new Date(note.date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -63,94 +62,134 @@ function NoteCard({ note, onEdit, onDelete, onView }: NoteCardProps) {
   return (
     <div
       className={cn(
-        "group bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-border/50 rounded-lg p-5 transition-all duration-200",
+        "group relative bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-border/50 rounded-xl p-6 transition-all duration-300",
         "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
         "animate-in fade-in-0 slide-in-from-bottom-2",
+        note.pinned && "border-primary/40 ring-1 ring-primary/20",
       )}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3 mb-3">
+      {/* Pinned/Starred indicators at top right */}
+      {(note.pinned || note.starred) && (
+        <div className="absolute top-4 right-4 flex gap-1.5">
+          {note.pinned && (
+            <div className="bg-primary/20 text-primary rounded-full p-1.5">
+              <Pin className="h-3 w-3 fill-current" />
+            </div>
+          )}
+          {note.starred && (
+            <div className="bg-yellow-500/20 text-yellow-500 rounded-full p-1.5">
+              <Star className="h-3 w-3 fill-current" />
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0 pr-12">
             <h4
-              className="font-semibold text-base leading-snug cursor-pointer hover:text-primary transition-colors"
+              className="font-semibold text-lg leading-tight cursor-pointer hover:text-primary transition-colors mb-2"
               onClick={onView}
             >
               {note.title}
             </h4>
-
-            {/* Desktop: Show all icons on hover */}
-            <div className="hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onView}
-                title="View note"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onEdit}
-                title="Edit note"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={onDelete}
-                title="Delete note"
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Mobile: Show dropdown menu */}
-            <div className="lg:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-dark dark">
-                  <DropdownMenuItem onClick={onView}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    View note
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit note
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onDelete}
-                    className="text-destructive"
-                  >
-                    <Trash className="mr-2 h-4 w-4" />
-                    Delete note
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              <span>{formattedDate}</span>
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed whitespace-pre-wrap">
-            {preview}
-          </p>
+        </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {formattedDate}
+        {/* Preview content */}
+        <p className="text-sm text-muted-foreground/80 line-clamp-2 leading-relaxed">
+          {preview}
+        </p>
+
+        {/* Actions bar at bottom */}
+        <div className="flex items-center justify-between pt-2 border-t border-border/30">
+          {/* Desktop: Show all action buttons */}
+          <div className="hidden lg:flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs gap-1.5"
+              onClick={onView}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              <span>View</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn("h-8 px-2 text-xs gap-1.5", note.starred && "text-yellow-500")}
+              onClick={onToggleStar}
+            >
+              <Star className={cn("h-3.5 w-3.5", note.starred && "fill-current")} />
+              <span>{note.starred ? "Starred" : "Star"}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn("h-8 px-2 text-xs gap-1.5", note.pinned && "text-primary")}
+              onClick={onTogglePin}
+            >
+              <Pin className={cn("h-3.5 w-3.5", note.pinned && "fill-current")} />
+              <span>{note.pinned ? "Pinned" : "Pin"}</span>
+            </Button>
+          </div>
+
+          {/* Mobile: Show view button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden h-8 px-2 text-xs gap-1.5"
+            onClick={onView}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span>View</span>
+          </Button>
+
+          {/* Edit and Delete actions - both desktop and mobile */}
+          <div className="flex items-center gap-1">
+            {/* Mobile: Quick pin/star actions */}
+            <div className="lg:hidden flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("h-8 w-8", note.starred && "text-yellow-500")}
+                onClick={onToggleStar}
+              >
+                <Star className={cn("h-3.5 w-3.5", note.starred && "fill-current")} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("h-8 w-8", note.pinned && "text-primary")}
+                onClick={onTogglePin}
+              >
+                <Pin className={cn("h-3.5 w-3.5", note.pinned && "fill-current")} />
+              </Button>
             </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onEdit}
+              title="Edit note"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive/70 hover:text-destructive"
+              onClick={onDelete}
+              title="Delete note"
+            >
+              <Trash className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -164,6 +203,8 @@ export function MeetingNotes({
   // onEditNote,
   onDeleteNote,
   onSaveNote,
+  onTogglePin,
+  onToggleStar,
 }: MeetingNotesProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingNote, setViewingNote] = useState<MeetingNote | null>(null);
@@ -171,6 +212,7 @@ export function MeetingNotes({
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [deleteConfirmNote, setDeleteConfirmNote] = useState<MeetingNote | null>(null);
+  const [activeFilter, setActiveFilter] = useState<"all" | "pinned" | "starred">("all");
 
   // Editor state
   const [title, setTitle] = useState("");
@@ -353,14 +395,72 @@ export function MeetingNotes({
     setHasUnsavedChanges(false);
   };
 
+  // Helper function to get date label for grouping
+  const getDateLabel = (dateString: string): string => {
+    const noteDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    noteDate.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - noteDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return "This Week";
+    if (diffDays < 30) return "This Month";
+
+    // Format as "Month Year" for older notes
+    return noteDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  };
+
   const filteredNotes = notes
     .filter((note) => {
       const matchesSearch =
         note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         note.content.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch;
+
+      const matchesFilter =
+        activeFilter === "all" ? true :
+        activeFilter === "pinned" ? note.pinned :
+        activeFilter === "starred" ? note.starred :
+        true;
+
+      return matchesSearch && matchesFilter;
     })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => {
+      // First sort by pinned status
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      // Then by date (newest first)
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+
+  // Group notes by date
+  const groupedNotes = filteredNotes.reduce((groups, note) => {
+    const label = getDateLabel(note.date);
+    if (!groups[label]) {
+      groups[label] = [];
+    }
+    groups[label].push(note);
+    return groups;
+  }, {} as Record<string, MeetingNote[]>);
+
+  // Define the order of groups
+  const groupOrder = ["Today", "Yesterday", "This Week", "This Month"];
+  const orderedGroups = Object.keys(groupedNotes).sort((a, b) => {
+    const indexA = groupOrder.indexOf(a);
+    const indexB = groupOrder.indexOf(b);
+
+    // If both are in the predefined order, sort by that
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    // If only A is in predefined order, it comes first
+    if (indexA !== -1) return -1;
+    // If only B is in predefined order, it comes first
+    if (indexB !== -1) return 1;
+    // Otherwise, sort month-year groups in reverse chronological order
+    return b.localeCompare(a);
+  });
 
   // Show editor/viewer if creating, editing, or viewing
   const showEditor = isCreatingNew || viewingNote !== null;
@@ -470,6 +570,7 @@ export function MeetingNotes({
     <div className="flex-1 overflow-auto bg-dark">
       <div className="p-4 md:p-8 space-y-6 max-w-[1400px] mx-auto">
         <div className="space-y-6">
+          {/* Header */}
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
@@ -491,18 +592,60 @@ export function MeetingNotes({
             </Button>
           </div>
 
-          <div className="relative max-w-full sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="Search notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10 md:h-11 bg-card border-border/50"
-            />
+          {/* Search Bar and Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-full sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search notes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10 md:h-11 bg-card border-border/50"
+              />
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-2 p-1 bg-card/30 rounded-lg border border-border/40 w-fit">
+              <button
+                onClick={() => setActiveFilter("all")}
+                className={cn(
+                  "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                  activeFilter === "all"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                )}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setActiveFilter("pinned")}
+                className={cn(
+                  "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-1.5",
+                  activeFilter === "pinned"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                )}
+              >
+                <Pin className={cn("h-3.5 w-3.5", activeFilter === "pinned" && "fill-current")} />
+                <span className="hidden sm:inline">Pinned</span>
+              </button>
+              <button
+                onClick={() => setActiveFilter("starred")}
+                className={cn(
+                  "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-1.5",
+                  activeFilter === "starred"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                )}
+              >
+                <Star className={cn("h-3.5 w-3.5", activeFilter === "starred" && "fill-current")} />
+                <span className="hidden sm:inline">Starred</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredNotes.length === 0 ? (
             <div className="bg-card/30 border-2 border-dashed border-border/50 rounded-lg p-12 text-center">
               <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
@@ -516,17 +659,38 @@ export function MeetingNotes({
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-              {filteredNotes.map((note) => (
-                <NoteCard
-                  key={note._id}
-                  note={note}
-                  onEdit={() => handleEditNoteClick(note)}
-                  onDelete={() => handleDeleteClick(note)}
-                  onView={() => handleViewNote(note)}
-                />
-              ))}
-            </div>
+            orderedGroups.map((groupLabel) => (
+              <div key={groupLabel} className="space-y-4">
+                {/* Date Group Header */}
+                <div className="flex items-center gap-3 sticky top-0 bg-dark/95 backdrop-blur-md py-3 z-10 border-b border-border/30">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1 w-1 rounded-full bg-primary" />
+                    <h3 className="text-base font-semibold text-foreground/90">
+                      {groupLabel}
+                    </h3>
+                  </div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-border/50 to-transparent" />
+                  <span className="text-xs text-muted-foreground">
+                    {groupedNotes[groupLabel].length} {groupedNotes[groupLabel].length === 1 ? "note" : "notes"}
+                  </span>
+                </div>
+
+                {/* Notes Grid */}
+                <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                  {groupedNotes[groupLabel].map((note) => (
+                    <NoteCard
+                      key={note._id}
+                      note={note}
+                      onEdit={() => handleEditNoteClick(note)}
+                      onDelete={() => handleDeleteClick(note)}
+                      onView={() => handleViewNote(note)}
+                      onTogglePin={() => onTogglePin(note._id)}
+                      onToggleStar={() => onToggleStar(note._id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>

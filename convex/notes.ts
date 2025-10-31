@@ -15,6 +15,8 @@ export const list = query({
       content: v.string(),
       date: v.string(),
       tags: v.optional(v.array(v.string())),
+      pinned: v.optional(v.boolean()),
+      starred: v.optional(v.boolean()),
       userId: v.id("users"),
     }),
   ),
@@ -48,6 +50,8 @@ export const get = query({
       content: v.string(),
       date: v.string(),
       tags: v.optional(v.array(v.string())),
+      pinned: v.optional(v.boolean()),
+      starred: v.optional(v.boolean()),
       userId: v.id("users"),
     }),
     v.null(),
@@ -160,6 +164,66 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.noteId);
+
+    return null;
+  },
+});
+
+/**
+ * Toggle pin status of a meeting note
+ */
+export const togglePin = mutation({
+  args: { noteId: v.id("meetingNotes") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const note = await ctx.db.get(args.noteId);
+    if (!note) {
+      throw new Error("Note not found");
+    }
+
+    // Ensure user can only pin their own notes
+    if (note.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    await ctx.db.patch(args.noteId, {
+      pinned: !note.pinned,
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Toggle star status of a meeting note
+ */
+export const toggleStar = mutation({
+  args: { noteId: v.id("meetingNotes") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const note = await ctx.db.get(args.noteId);
+    if (!note) {
+      throw new Error("Note not found");
+    }
+
+    // Ensure user can only star their own notes
+    if (note.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    await ctx.db.patch(args.noteId, {
+      starred: !note.starred,
+    });
 
     return null;
   },

@@ -55,10 +55,13 @@ export default defineSchema({
     content: v.string(),
     date: v.string(),
     tags: v.optional(v.array(v.string())),
+    pinned: v.optional(v.boolean()),
+    starred: v.optional(v.boolean()),
     userId: v.id("users"),
   })
     .index("by_user", ["userId"])
-    .index("by_user_and_date", ["userId", "date"]),
+    .index("by_user_and_date", ["userId", "date"])
+    .index("by_user_and_pinned", ["userId", "pinned"]),
 
   lists: defineTable({
     title: v.string(),
