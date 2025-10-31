@@ -62,20 +62,18 @@ function StatCard({
   subtitle,
   icon: Icon,
   trend,
-  color = "primary",
 }: {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: any;
   trend?: { value: number; label: string };
-  color?: string;
 }) {
   return (
     <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/[0.02] border-border/50">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-xl bg-${color}/10`}>
-          <Icon className={`h-6 w-6 text-${color}`} />
+      <div className="flex items-start justify-between">
+        <div className={`p-3 rounded-xl bg-primary/10`}>
+          <Icon className={`h-5 w-5 text-primary`} />
         </div>
         {trend && (
           <div
@@ -170,28 +168,24 @@ export function StatsPage() {
             value={overview.totalTasks}
             subtitle={`${overview.tasksThisWeek} this week`}
             icon={Target}
-            color="primary"
           />
           <StatCard
             title="Completed"
             value={overview.completedTasks}
             subtitle={`${overview.completedThisWeek} this week`}
             icon={CheckCircle2}
-            color="success"
           />
           <StatCard
             title="Completion Rate"
             value={`${overview.completionRate.toFixed(1)}%`}
             subtitle="Overall success rate"
             icon={BarChart3}
-            color="info"
           />
           <StatCard
             title="Avg. Completion Time"
             value={`${overview.averageCompletionTime.toFixed(1)}d`}
             subtitle="Days to complete"
             icon={Clock}
-            color="warning"
           />
         </div>
 
@@ -420,9 +414,7 @@ export function StatsPage() {
                           {project.overdueTasks}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-sm">
-                          0
-                        </span>
+                        <span className="text-muted-foreground text-sm">0</span>
                       )}
                     </td>
                   </tr>

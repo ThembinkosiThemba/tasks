@@ -37,7 +37,7 @@ interface DailyScheduleProps {
     date: string,
     startTime?: string,
     endTime?: string,
-    completed?: boolean
+    completed?: boolean,
   ) => void;
   onRemoveDailyTask: (dailyTaskId: Id<"dailyTasks">) => void;
 }
@@ -64,7 +64,7 @@ export function DailySchedule({
       tomorrowDate,
       dailyTask.startTime,
       dailyTask.endTime,
-      dailyTask.completed
+      dailyTask.completed,
     );
   };
 
@@ -73,6 +73,7 @@ export function DailySchedule({
     projects.find((p) => p._id === projectId);
 
   const todaySchedule = dailyTasks
+    .sort((a, b) => Number(a.completed) - Number(b.completed))
     .filter((dt) => dt.date === selectedDate)
     .filter((dt) => {
       if (!filterProject) return true;
@@ -375,7 +376,10 @@ export function DailySchedule({
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-dark dark">
+                              <DropdownMenuContent
+                                align="end"
+                                className="bg-dark dark"
+                              >
                                 <DropdownMenuItem
                                   onClick={() => moveToTomorrow(dailyTask)}
                                 >
@@ -383,7 +387,9 @@ export function DailySchedule({
                                   Move to Tomorrow
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => onRemoveDailyTask(dailyTask._id)}
+                                  onClick={() =>
+                                    onRemoveDailyTask(dailyTask._id)
+                                  }
                                   className="text-destructive"
                                 >
                                   <Trash className="mr-2 h-4 w-4" />
@@ -480,7 +486,10 @@ export function DailySchedule({
                                     <MoreHorizontal className="h-3.5 w-3.5" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="bg-dark dark">
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="bg-dark dark"
+                                >
                                   <DropdownMenuItem
                                     onClick={() => moveToTomorrow(dailyTask)}
                                   >
@@ -488,7 +497,9 @@ export function DailySchedule({
                                     Move to Tomorrow
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onClick={() => onRemoveDailyTask(dailyTask._id)}
+                                    onClick={() =>
+                                      onRemoveDailyTask(dailyTask._id)
+                                    }
                                     className="text-destructive"
                                   >
                                     <Trash className="mr-2 h-4 w-4" />

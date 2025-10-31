@@ -55,7 +55,7 @@ export function Sidebar({
   onMobileClose,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const [projectsExpanded, setProjectsExpanded] = useState(false);
 
   const filteredProjects = projects.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()),

@@ -404,7 +404,7 @@ function DroppableColumn({
   const statusConfig = {
     todo: { label: "To Do", color: "bg-blue-500", icon: Circle },
     "in-progress": {
-      label: "In Progress",
+      label: "Progress",
       color: "bg-yellow-500",
       icon: Clock,
     },
@@ -422,7 +422,6 @@ function DroppableColumn({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-1 pb-4 sticky top-0 z-10">
-        <div className={cn("h-2 w-2 rounded-full", config.color)} />
         <h3 className="font-semibold text-base">{config.label}</h3>
         <Badge variant="secondary">{tasks.length}</Badge>
         <div className="ml-auto flex items-center gap-0.5">

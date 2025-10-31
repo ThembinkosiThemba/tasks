@@ -69,7 +69,7 @@ export default function Dashboard() {
   const [editingNote, setEditingNote] = useState<MeetingNote | undefined>();
 
   // UI State
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
@@ -224,11 +224,13 @@ export default function Dashboard() {
         date: noteData.date!,
       });
     } else {
-      await createNote({
+      const newNoteId = await createNote({
         title: noteData.title!,
         content: noteData.content!,
         date: noteData.date!,
       });
+      // Return the newly created note ID so the component can track it
+      return newNoteId;
     }
     setEditingNote(undefined);
   };
