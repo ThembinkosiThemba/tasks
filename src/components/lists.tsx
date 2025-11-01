@@ -93,6 +93,8 @@ function ListCard({
     ? list.items.reduce((sum, item) => sum + (item.price || 0), 0)
     : 0;
 
+  const completedCount = list.items.filter(item => item.status === "checked").length;
+
   const handleAddItem = () => {
     if (!newItemTitle.trim()) return;
     const price =
@@ -129,228 +131,246 @@ function ListCard({
   return (
     <div
       className={cn(
-        `group ${cardGradient} border border-border/50 rounded-lg p-5 transition-all duration-200`,
-        // "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
+        `group ${cardGradient} border border-border/50 rounded-xl transition-all duration-200`,
+        "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
         "animate-in fade-in-0 slide-in-from-bottom-2",
       )}
     >
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {isPricing ? (
-            <ShoppingCart className="h-5 w-5 text-primary shrink-0" />
-          ) : (
-            <ListTodo className="h-5 w-5 text-primary shrink-0" />
-          )}
-          <h3 className="font-semibold text-lg truncate">{list.title}</h3>
-          <Badge
-            variant={isPricing ? "default" : "secondary"}
-            className="text-xs"
-          >
-            {list.type}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-            onClick={onExport}
-            title="Export & Share"
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-dark dark">
-              <DropdownMenuItem onClick={onEdit}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit list
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onDelete} className="text-destructive">
-                <Trash className="mr-2 h-4 w-4" />
-                Delete list
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-border/30">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              {isPricing ? (
+                <ShoppingCart className="h-4 w-4 text-primary shrink-0" />
+              ) : (
+                <ListTodo className="h-4 w-4 text-primary shrink-0" />
+              )}
+              <h3 className="font-semibold text-base truncate">{list.title}</h3>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{list.items.length} {list.items.length === 1 ? 'item' : 'items'}</span>
+              {list.items.length > 0 && (
+                <>
+                  <span>•</span>
+                  <span>{completedCount} completed</span>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={onExport}
+              title="Export & Share"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-dark dark">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Pencil className="mr-2 h-3.5 w-3.5" />
+                  Edit list
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                  <Trash className="mr-2 h-3.5 w-3.5" />
+                  Delete list
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
       {/* Items */}
-      <div className="space-y-2 mb-3">
-        {list.items.map((item, index) =>
-          editingItemIndex === index ? (
-            // Edit mode
-            <div
-              key={index}
-              className="space-y-2 p-3 rounded-md bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-primary/30"
-            >
-              <Input
-                placeholder="Item title"
-                value={editItemTitle}
-                onChange={(e) => setEditItemTitle(e.target.value)}
-                className="h-9"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleEditItem();
-                  if (e.key === "Escape") cancelEditItem();
-                }}
-                autoFocus
-              />
-              {isPricing && (
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="Price"
-                  value={editItemPrice}
-                  onChange={(e) => setEditItemPrice(e.target.value)}
-                  className="h-9"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleEditItem();
-                  }}
-                />
-              )}
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleEditItem} className="flex-1">
-                  <Check className="h-3.5 w-3.5 mr-1" />
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={cancelEditItem}
-                  className="flex-1"
+      <div className="p-4">
+        {list.items.length > 0 ? (
+          <div className="space-y-1.5 mb-3">
+            {list.items.map((item, index) =>
+              editingItemIndex === index ? (
+                // Edit mode
+                <div
+                  key={index}
+                  className="space-y-2 p-3 rounded-lg bg-primary/5 border border-primary/20"
                 >
-                  <X className="h-3.5 w-3.5 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            // View mode
-            <div
-              key={index}
-              className="flex items-center gap-3 p-2 rounded-md bg-background/50 border border-border/30 group/item hover:border-primary/30 transition-colors"
-            >
-              <Checkbox
-                checked={item.status === "checked"}
-                onCheckedChange={() => onToggleItem(index)}
-                className="shrink-0"
-              />
-              <span
-                className={cn(
-                  "flex-1 text-sm",
-                  item.status === "checked" &&
-                    "line-through text-muted-foreground",
-                )}
-              >
-                {item.title}
-              </span>
-              {isPricing && (
-                <div className="flex items-center gap-1 text-sm font-medium text-primary">
-                  E {item.price !== undefined ? item.price.toFixed(2) : "0.00"}
+                  <Input
+                    placeholder="Item title"
+                    value={editItemTitle}
+                    onChange={(e) => setEditItemTitle(e.target.value)}
+                    className="h-9 text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleEditItem();
+                      if (e.key === "Escape") cancelEditItem();
+                    }}
+                    autoFocus
+                  />
+                  {isPricing && (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Price"
+                      value={editItemPrice}
+                      onChange={(e) => setEditItemPrice(e.target.value)}
+                      className="h-9 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleEditItem();
+                      }}
+                    />
+                  )}
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleEditItem} className="flex-1 h-8 text-xs">
+                      <Check className="h-3 w-3 mr-1" />
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={cancelEditItem}
+                      className="flex-1 h-8 text-xs"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              )}
-              <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => startEditingItem(index)}
+              ) : (
+                // View mode
+                <div
+                  key={index}
+                  className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg bg-background/30 border border-transparent group/item hover:bg-background/50 hover:border-border/40 transition-all"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => onRemoveItem(index)}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+                  <Checkbox
+                    checked={item.status === "checked"}
+                    onCheckedChange={() => onToggleItem(index)}
+                    className="shrink-0"
+                  />
+                  <span
+                    className={cn(
+                      "flex-1 text-sm leading-snug",
+                      item.status === "checked" &&
+                        "line-through text-muted-foreground/70",
+                    )}
+                  >
+                    {item.title}
+                  </span>
+                  {isPricing && (
+                    <div className="text-sm font-semibold text-primary tabular-nums">
+                      E {item.price !== undefined ? item.price.toFixed(2) : "0.00"}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => startEditingItem(index)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive/70 hover:text-destructive"
+                      onClick={() => onRemoveItem(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        ) : (
+          <div className="py-6 text-center">
+            <p className="text-sm text-muted-foreground/60">No items yet</p>
+          </div>
+        )}
+
+        {/* Add Item Form */}
+        {showAddItem ? (
+          <div className="space-y-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <Input
+              placeholder="Item title"
+              value={newItemTitle}
+              onChange={(e) => setNewItemTitle(e.target.value)}
+              className="h-9 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAddItem();
+                if (e.key === "Escape") {
+                  setShowAddItem(false);
+                  setNewItemTitle("");
+                  setNewItemPrice("");
+                }
+              }}
+              autoFocus
+            />
+            {isPricing && (
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Price"
+                value={newItemPrice}
+                onChange={(e) => setNewItemPrice(e.target.value)}
+                className="h-9 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddItem();
+                }}
+              />
+            )}
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleAddItem} className="flex-1 h-8 text-xs">
+                <Check className="h-3 w-3 mr-1" />
+                Add
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowAddItem(false);
+                  setNewItemTitle("");
+                  setNewItemPrice("");
+                }}
+                className="flex-1 h-8 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Cancel
+              </Button>
             </div>
-          ),
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full h-9 text-xs border border-dashed border-border/50 hover:border-primary/30 hover:bg-primary/5"
+            onClick={() => setShowAddItem(true)}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Add Item
+          </Button>
         )}
       </div>
 
-      {/* Add Item Form */}
-      {showAddItem ? (
-        <div className="space-y-2 p-3 rounded-md bg-gradient-to-br from-primary/5 to-primary/[0.02] border border-primary/30">
-          <Input
-            placeholder="Item title"
-            value={newItemTitle}
-            onChange={(e) => setNewItemTitle(e.target.value)}
-            className="h-9"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAddItem();
-              if (e.key === "Escape") {
-                setShowAddItem(false);
-                setNewItemTitle("");
-                setNewItemPrice("");
-              }
-            }}
-            autoFocus
-          />
-          {isPricing && (
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="Price"
-              value={newItemPrice}
-              onChange={(e) => setNewItemPrice(e.target.value)}
-              className="h-9"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddItem();
-              }}
-            />
-          )}
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleAddItem} className="flex-1">
-              <Check className="h-3.5 w-3.5 mr-1" />
-              Add
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowAddItem(false);
-                setNewItemTitle("");
-                setNewItemPrice("");
-              }}
-              className="flex-1"
-            >
-              <X className="h-3.5 w-3.5 mr-1" />
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => setShowAddItem(true)}
-        >
-          <Plus className="h-3.5 w-3.5 mr-2" />
-          Add Item
-        </Button>
-      )}
-
       {/* Pricing Total */}
       {isPricing && list.items.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
-          <span className="text-sm font-medium text-muted-foreground">
-            Total ({list.items.length} items):
-          </span>
-          <div className="flex items-center gap-1 text-lg font-bold text-primary">
-            E {totalPrice.toFixed(2)}
+        <div className="px-5 py-3.5 border-t border-border/30">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Total
+            </span>
+            <div className="text-xl font-bold text-primary tabular-nums">
+              E {totalPrice.toFixed(2)}
+            </div>
           </div>
         </div>
       )}
@@ -560,7 +580,7 @@ export function Lists({
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 items-start">
               {filteredLists.map((list) => (
                 <ListCard
                   key={list._id}

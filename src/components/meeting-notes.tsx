@@ -253,7 +253,7 @@ export function MeetingNotes({
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [title, content, hasUnsavedChanges, notes, editingNote]);
+  }, [title, content, hasUnsavedChanges]);
 
   // Ctrl+S keyboard shortcut for saving
   useEffect(() => {
@@ -274,7 +274,7 @@ export function MeetingNotes({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isCreatingNew, editingNote, title, content, notes]);
+  }, [isCreatingNew, editingNote, title, content]);
 
   // Warn before closing with unsaved changes
   useEffect(() => {
@@ -340,6 +340,9 @@ export function MeetingNotes({
   const handleSave = async () => {
     // Prevent saving completely empty notes
     if (!title.trim() && !content.trim()) return;
+
+    // Prevent concurrent saves
+    if (isSaving) return;
 
     setIsSaving(true);
     const noteData: Partial<MeetingNote> = {
