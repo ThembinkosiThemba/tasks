@@ -358,12 +358,16 @@ export function MeetingNotes({
         // When creating a new note, get the ID and update editingNote
         const newNoteId = await onSaveNote(noteData);
         if (newNoteId) {
-          // Find the newly created note from the notes array
-          const newNote = notes.find(note => note._id === newNoteId);
-          if (newNote) {
-            setEditingNote(newNote);
-            setIsCreatingNew(false);
-          }
+          // The `notes` prop might not be updated yet with the new note.
+          // To prevent creating duplicate notes on subsequent auto-saves,
+          // we create a temporary note object with the new ID and existing
+          // data to hold the state.
+          setEditingNote({
+            ...noteData,
+            _id: newNoteId,
+            _creationTime: Date.now(),
+          } as MeetingNote);
+          setIsCreatingNew(false);
         }
       }
 
