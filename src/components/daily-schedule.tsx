@@ -40,6 +40,7 @@ interface DailyScheduleProps {
     completed?: boolean,
   ) => void;
   onRemoveDailyTask: (dailyTaskId: Id<"dailyTasks">) => void;
+  onUpdateTaskStatus: (taskId: Id<"tasks">, status: Task["status"]) => void;
 }
 
 export function DailySchedule({
@@ -52,8 +53,11 @@ export function DailySchedule({
   onToggleComplete,
   onUpdateDailyTask,
   onRemoveDailyTask,
+  onUpdateTaskStatus,
 }: DailyScheduleProps) {
   const [filterProject, setFilterProject] = useState<string | null>(null);
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+  const [clickedArrow, setClickedArrow] = useState<string | null>(null);
 
   const moveToTomorrow = (dailyTask: DailyTask) => {
     const tomorrow = new Date(selectedDate);
@@ -66,6 +70,68 @@ export function DailySchedule({
       dailyTask.endTime,
       dailyTask.completed,
     );
+  };
+
+  const getNextStatus = (
+    currentStatus: Task["status"],
+  ): Task["status"] | null => {
+    switch (currentStatus) {
+      case "todo":
+        return "in-progress";
+      case "in-progress":
+        return "review";
+      case "review":
+        return "done";
+      case "done":
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const getPrevStatus = (
+    currentStatus: Task["status"],
+  ): Task["status"] | null => {
+    switch (currentStatus) {
+      case "todo":
+        return null;
+      case "in-progress":
+        return "todo";
+      case "review":
+        return "in-progress";
+      case "done":
+        return "review";
+      default:
+        return null;
+    }
+  };
+
+  const handleStatusUpdate = async (
+    taskId: Id<"tasks">,
+    newStatus: Task["status"],
+    direction: "prev" | "next",
+  ) => {
+    const arrowId = `${taskId}-${direction}`;
+    setUpdatingTaskId(taskId);
+    setClickedArrow(arrowId);
+    try {
+      await onUpdateTaskStatus(taskId, newStatus);
+    } finally {
+      setTimeout(() => {
+        setUpdatingTaskId(null);
+        setClickedArrow(null);
+      }, 300);
+    }
+  };
+
+  const getStatusConfig = (status: Task["status"]) => {
+    const configs = {
+      todo: { label: "To Do", color: "bg-blue-500/10 text-blue-500 border-blue-500/30" },
+      "in-progress": { label: "In Progress", color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30" },
+      review: { label: "Review", color: "bg-orange-500/10 text-orange-500 border-orange-500/30" },
+      done: { label: "Done", color: "bg-green-500/10 text-green-500 border-green-500/30" },
+    };
+    return configs[status];
   };
 
   const getTask = (taskId: string) => tasks.find((t) => t._id === taskId);
@@ -363,6 +429,77 @@ export function DailySchedule({
                                 >
                                   {task.priority}
                                 </Badge>
+
+                                {/* Status Navigation */}
+                                <div className="flex items-center gap-1 ml-auto">
+                                  {getPrevStatus(task.status) && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() =>
+                                        handleStatusUpdate(
+                                          task._id,
+                                          getPrevStatus(task.status)!,
+                                          "prev",
+                                        )
+                                      }
+                                      disabled={updatingTaskId === task._id}
+                                      title={`Move to ${getPrevStatus(task.status)}`}
+                                    >
+                                      {updatingTaskId === task._id &&
+                                      clickedArrow === `${task._id}-prev` ? (
+                                        <div className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                      ) : (
+                                        <ChevronLeft
+                                          className={cn(
+                                            "h-3.5 w-3.5 transition-transform",
+                                            clickedArrow === `${task._id}-prev` &&
+                                              "rotate-[-360deg]",
+                                          )}
+                                        />
+                                      )}
+                                    </Button>
+                                  )}
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "text-xs font-medium capitalize px-2 py-0.5",
+                                      getStatusConfig(task.status).color,
+                                    )}
+                                  >
+                                    {getStatusConfig(task.status).label}
+                                  </Badge>
+                                  {getNextStatus(task.status) && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() =>
+                                        handleStatusUpdate(
+                                          task._id,
+                                          getNextStatus(task.status)!,
+                                          "next",
+                                        )
+                                      }
+                                      disabled={updatingTaskId === task._id}
+                                      title={`Move to ${getNextStatus(task.status)}`}
+                                    >
+                                      {updatingTaskId === task._id &&
+                                      clickedArrow === `${task._id}-next` ? (
+                                        <div className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                      ) : (
+                                        <ChevronRight
+                                          className={cn(
+                                            "h-3.5 w-3.5 transition-transform",
+                                            clickedArrow === `${task._id}-next` &&
+                                              "rotate-[360deg]",
+                                          )}
+                                        />
+                                      )}
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
@@ -473,6 +610,77 @@ export function DailySchedule({
                                   >
                                     {task.priority}
                                   </Badge>
+
+                                  {/* Status Navigation */}
+                                  <div className="flex items-center gap-0.5 ml-auto">
+                                    {getPrevStatus(task.status) && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5"
+                                        onClick={() =>
+                                          handleStatusUpdate(
+                                            task._id,
+                                            getPrevStatus(task.status)!,
+                                            "prev",
+                                          )
+                                        }
+                                        disabled={updatingTaskId === task._id}
+                                        title={`Move to ${getPrevStatus(task.status)}`}
+                                      >
+                                        {updatingTaskId === task._id &&
+                                        clickedArrow === `${task._id}-prev` ? (
+                                          <div className="h-2.5 w-2.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                        ) : (
+                                          <ChevronLeft
+                                            className={cn(
+                                              "h-3 w-3 transition-transform",
+                                              clickedArrow === `${task._id}-prev` &&
+                                                "rotate-[-360deg]",
+                                            )}
+                                          />
+                                        )}
+                                      </Button>
+                                    )}
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        "text-[10px] font-medium capitalize px-1.5 h-4",
+                                        getStatusConfig(task.status).color,
+                                      )}
+                                    >
+                                      {getStatusConfig(task.status).label}
+                                    </Badge>
+                                    {getNextStatus(task.status) && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5"
+                                        onClick={() =>
+                                          handleStatusUpdate(
+                                            task._id,
+                                            getNextStatus(task.status)!,
+                                            "next",
+                                          )
+                                        }
+                                        disabled={updatingTaskId === task._id}
+                                        title={`Move to ${getNextStatus(task.status)}`}
+                                      >
+                                        {updatingTaskId === task._id &&
+                                        clickedArrow === `${task._id}-next` ? (
+                                          <div className="h-2.5 w-2.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                        ) : (
+                                          <ChevronRight
+                                            className={cn(
+                                              "h-3 w-3 transition-transform",
+                                              clickedArrow === `${task._id}-next` &&
+                                                "rotate-[360deg]",
+                                            )}
+                                          />
+                                        )}
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 

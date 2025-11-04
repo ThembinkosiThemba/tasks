@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -19,13 +20,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Task, Project, TaskType } from "@/types";
+import type { Id } from "../../convex/_generated/dataModel";
 
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: Task;
   projects: Project[];
-  onSave: (task: Partial<Task>) => void;
+  onSave: (task: Partial<Task>) => Promise<Id<"tasks"> | void>;
+  onSchedule?: (
+    taskId: Id<"tasks">,
+    date: string,
+    startTime?: string,
+    endTime?: string,
+  ) => void;
 }
 
 export function TaskDialog({
@@ -34,6 +42,7 @@ export function TaskDialog({
   task,
   projects,
   onSave,
+  onSchedule,
 }: TaskDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -42,6 +51,15 @@ export function TaskDialog({
   const [priority, setPriority] = useState<Task["priority"]>("medium");
   const [taskType, setTaskType] = useState<string>("general");
   const [reminderDate, setReminderDate] = useState<string>("");
+
+  // Scheduling fields
+  const [shouldSchedule, setShouldSchedule] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [useTimeBlock, setUseTimeBlock] = useState(false);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
 
   useEffect(() => {
     if (task) {
@@ -64,12 +82,17 @@ export function TaskDialog({
       setPriority("medium");
       setTaskType("general");
       setReminderDate("");
+      setShouldSchedule(false);
+      setScheduleDate(new Date().toISOString().split("T")[0]);
+      setUseTimeBlock(false);
+      setStartTime("09:00");
+      setEndTime("10:00");
     }
   }, [task, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    const savedTask = await onSave({
       title,
       description,
       projectId: projectId === "none" ? undefined : (projectId as any),
@@ -78,6 +101,16 @@ export function TaskDialog({
       type: taskType === "general" ? undefined : (taskType as TaskType),
       reminderDate: reminderDate ? new Date(reminderDate).getTime() : undefined,
     });
+
+    // If scheduling is enabled and this is a new task, schedule it
+    if (shouldSchedule && !task && onSchedule && savedTask) {
+      if (useTimeBlock) {
+        onSchedule(savedTask as Id<"tasks">, scheduleDate, startTime, endTime);
+      } else {
+        onSchedule(savedTask as Id<"tasks">, scheduleDate);
+      }
+    }
+
     onOpenChange(false);
   };
 
@@ -111,7 +144,7 @@ export function TaskDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-4 gap-1">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select
@@ -194,6 +227,84 @@ export function TaskDialog({
               placeholder="Set a reminder"
             />
           </div> */}
+
+          {/* Scheduling section - only show when creating a new task */}
+          {!task && (
+            <div className="space-y-4 border-t pt-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="shouldSchedule"
+                  checked={shouldSchedule}
+                  onCheckedChange={(checked) =>
+                    setShouldSchedule(checked as boolean)
+                  }
+                />
+                <Label
+                  htmlFor="shouldSchedule"
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Schedule this task
+                </Label>
+              </div>
+
+              {shouldSchedule && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduleDate">Date</Label>
+                    <Input
+                      id="scheduleDate"
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="useTimeBlock"
+                      checked={useTimeBlock}
+                      onCheckedChange={(checked) =>
+                        setUseTimeBlock(checked as boolean)
+                      }
+                    />
+                    <Label
+                      htmlFor="useTimeBlock"
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Time block this task
+                    </Label>
+                  </div>
+
+                  {useTimeBlock && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="startTime">Start Time</Label>
+                        <Input
+                          id="startTime"
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="endTime">End Time</Label>
+                        <Input
+                          id="endTime"
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button type="button" onClick={() => onOpenChange(false)}>

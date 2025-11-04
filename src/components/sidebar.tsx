@@ -14,6 +14,7 @@ import {
   Trash,
   BarChart3,
   List,
+  LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,6 +42,40 @@ interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }
+
+interface SidebarItem {
+  view: string;
+  title: string;
+  icon: LucideIcon;
+}
+
+const sidebarItems: SidebarItem[] = [
+  {
+    view: "daily",
+    title: "Daily Schedule",
+    icon: Calendar,
+  },
+  {
+    view: "all",
+    title: "All Tasks",
+    icon: LayoutGrid,
+  },
+  {
+    view: "stats",
+    title: "Statistics",
+    icon: BarChart3,
+  },
+  {
+    view: "lists",
+    title: "Lists",
+    icon: List,
+  },
+  {
+    view: "notes",
+    title: "Notes",
+    icon: FileText,
+  },
+];
 
 export function Sidebar({
   projects,
@@ -90,70 +125,24 @@ export function Sidebar({
 
       {/* Navigation */}
       <div className="p-4 space-y-1">
-        <Button
-          variant={selectedView === "all" ? "secondary" : "ghost"}
-          className={cn(
-            "w-full h-10 font-medium transition-all hover:translate-x-1",
-            collapsed ? "justify-center px-0" : "justify-start",
-          )}
-          onClick={() => handleViewChange("all")}
-          title={collapsed ? "All Tasks" : undefined}
-        >
-          <LayoutGrid className={cn("h-4 w-4", !collapsed && "mr-3")} />
-          {!collapsed && "All Tasks"}
-        </Button>
-
-        <Button
-          variant={selectedView === "daily" ? "secondary" : "ghost"}
-          className={cn(
-            "w-full h-10 font-medium transition-all hover:translate-x-1",
-            collapsed ? "justify-center px-0" : "justify-start",
-          )}
-          onClick={() => handleViewChange("daily")}
-          title={collapsed ? "Daily Schedule" : undefined}
-        >
-          <Calendar className={cn("h-4 w-4", !collapsed && "mr-3")} />
-          {!collapsed && "Daily Schedule"}
-        </Button>
-
-        <Button
-          variant={selectedView === "stats" ? "secondary" : "ghost"}
-          className={cn(
-            "w-full h-10 font-medium transition-all hover:translate-x-1",
-            collapsed ? "justify-center px-0" : "justify-start",
-          )}
-          onClick={() => handleViewChange("stats")}
-          title={collapsed ? "Statistics" : undefined}
-        >
-          <BarChart3 className={cn("h-4 w-4", !collapsed && "mr-3")} />
-          {!collapsed && "Statistics"}
-        </Button>
-
-        <Button
-          variant={selectedView === "lists" ? "secondary" : "ghost"}
-          className={cn(
-            "w-full h-10 font-medium transition-all hover:translate-x-1",
-            collapsed ? "justify-center px-0" : "justify-start",
-          )}
-          onClick={() => handleViewChange("lists")}
-          title={collapsed ? "Lists" : undefined}
-        >
-          <List className={cn("h-4 w-4", !collapsed && "mr-3")} />
-          {!collapsed && "Lists"}
-        </Button>
-
-        <Button
-          variant={selectedView === "notes" ? "secondary" : "ghost"}
-          className={cn(
-            "w-full h-10 font-medium transition-all hover:translate-x-1",
-            collapsed ? "justify-center px-0" : "justify-start",
-          )}
-          onClick={() => handleViewChange("notes")}
-          title={collapsed ? "Notes" : undefined}
-        >
-          <FileText className={cn("h-4 w-4", !collapsed && "mr-3")} />
-          {!collapsed && "Notes"}
-        </Button>
+        {sidebarItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Button
+              key={item.view}
+              variant={selectedView === item.view ? "secondary" : "ghost"}
+              className={cn(
+                "w-full h-10 font-medium transition-all hover:translate-x-1",
+                collapsed ? "justify-center px-0" : "justify-start",
+              )}
+              onClick={() => handleViewChange(item.view)}
+              title={collapsed ? item.title : undefined}
+            >
+              <Icon className={cn("h-4 w-4", !collapsed && "mr-3")} />
+              {!collapsed && item.title}
+            </Button>
+          );
+        })}
       </div>
 
       {/* Scrollable Projects Section */}

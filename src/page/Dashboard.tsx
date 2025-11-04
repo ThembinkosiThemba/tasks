@@ -55,7 +55,7 @@ export default function Dashboard() {
   const updateListItem = useMutation(api.lists.updateListItem);
   const removeListItem = useMutation(api.lists.removeListItem);
 
-  const [selectedView, setSelectedView] = useState<string>("all");
+  const [selectedView, setSelectedView] = useState<string>("daily");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -157,8 +157,9 @@ export default function Dashboard() {
         type: taskData.type,
         reminderDate: taskData.reminderDate,
       });
+      return editingTask._id;
     } else {
-      await createTask({
+      const taskId = await createTask({
         title: taskData.title!,
         description: taskData.description,
         projectId: taskData.projectId,
@@ -167,8 +168,9 @@ export default function Dashboard() {
         type: taskData.type,
         reminderDate: taskData.reminderDate,
       });
+      setEditingTask(undefined);
+      return taskId;
     }
-    setEditingTask(undefined);
   };
 
   const handleDeleteTask = async (taskId: Id<"tasks">) => {
@@ -360,6 +362,9 @@ export default function Dashboard() {
               void handleUpdateDailyTask(id, date, start, end, completed)
             }
             onRemoveDailyTask={(id) => void handleRemoveDailyTask(id)}
+            onUpdateTaskStatus={(id, status) =>
+              void handleUpdateTaskStatus(id, status)
+            }
           />
         ) : selectedView === "stats" ? (
           <StatsPage />
@@ -477,6 +482,7 @@ export default function Dashboard() {
         task={editingTask}
         projects={projects}
         onSave={handleSaveTask}
+        onSchedule={handleScheduleTask}
       />
 
       <ProjectDialog
