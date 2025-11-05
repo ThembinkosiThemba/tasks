@@ -554,3 +554,225 @@ export const getOverdueTasks = query({
     return overdueTasks;
   },
 });
+
+/**
+ * Get most active periods (day, week, month with highest task completions)
+ */
+export const getMostActivePeriods = query({
+  args: {},
+  returns: v.object({
+    mostActiveDay: v.object({
+      date: v.string(),
+      completedTasks: v.number(),
+      createdTasks: v.number(),
+      totalActivity: v.number(),
+    }),
+    mostActiveWeek: v.object({
+      weekStart: v.string(),
+      weekEnd: v.string(),
+      completedTasks: v.number(),
+      createdTasks: v.number(),
+      totalActivity: v.number(),
+    }),
+    mostActiveMonth: v.object({
+      month: v.string(),
+      year: v.number(),
+      completedTasks: v.number(),
+      createdTasks: v.number(),
+      totalActivity: v.number(),
+    }),
+    recentActivity: v.array(
+      v.object({
+        date: v.string(),
+        completedTasks: v.number(),
+        createdTasks: v.number(),
+        totalActivity: v.number(),
+      }),
+    ),
+  }),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const tasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    // Track daily activity
+    const dailyActivity: Record<
+      string,
+      { created: number; completed: number }
+    > = {};
+    const weeklyActivity: Record<
+      string,
+      { created: number; completed: number }
+    > = {};
+    const monthlyActivity: Record<
+      string,
+      { created: number; completed: number; year: number }
+    > = {};
+
+    tasks.forEach((t) => {
+      // Daily tracking
+      const createdDate = new Date(t._creationTime).toISOString().split("T")[0];
+      if (!dailyActivity[createdDate]) {
+        dailyActivity[createdDate] = { created: 0, completed: 0 };
+      }
+      dailyActivity[createdDate].created++;
+
+      if (t.completedAt) {
+        const completedDate = new Date(t.completedAt)
+          .toISOString()
+          .split("T")[0];
+        if (!dailyActivity[completedDate]) {
+          dailyActivity[completedDate] = { created: 0, completed: 0 };
+        }
+        dailyActivity[completedDate].completed++;
+      }
+
+      // Weekly tracking (week starting on Sunday)
+      const createdDateObj = new Date(t._creationTime);
+      const createdWeekStart = new Date(createdDateObj);
+      createdWeekStart.setDate(
+        createdDateObj.getDate() - createdDateObj.getDay(),
+      );
+      const createdWeekKey = createdWeekStart.toISOString().split("T")[0];
+      if (!weeklyActivity[createdWeekKey]) {
+        weeklyActivity[createdWeekKey] = { created: 0, completed: 0 };
+      }
+      weeklyActivity[createdWeekKey].created++;
+
+      if (t.completedAt) {
+        const completedDateObj = new Date(t.completedAt);
+        const completedWeekStart = new Date(completedDateObj);
+        completedWeekStart.setDate(
+          completedDateObj.getDate() - completedDateObj.getDay(),
+        );
+        const completedWeekKey = completedWeekStart.toISOString().split("T")[0];
+        if (!weeklyActivity[completedWeekKey]) {
+          weeklyActivity[completedWeekKey] = { created: 0, completed: 0 };
+        }
+        weeklyActivity[completedWeekKey].completed++;
+      }
+
+      // Monthly tracking
+      const createdMonth = new Date(t._creationTime);
+      const monthKey = `${createdMonth.getMonth() + 1}-${createdMonth.getFullYear()}`;
+      if (!monthlyActivity[monthKey]) {
+        monthlyActivity[monthKey] = {
+          created: 0,
+          completed: 0,
+          year: createdMonth.getFullYear(),
+        };
+      }
+      monthlyActivity[monthKey].created++;
+
+      if (t.completedAt) {
+        const completedMonth = new Date(t.completedAt);
+        const completedMonthKey = `${completedMonth.getMonth() + 1}-${completedMonth.getFullYear()}`;
+        if (!monthlyActivity[completedMonthKey]) {
+          monthlyActivity[completedMonthKey] = {
+            created: 0,
+            completed: 0,
+            year: completedMonth.getFullYear(),
+          };
+        }
+        monthlyActivity[completedMonthKey].completed++;
+      }
+    });
+
+    // Find most active day
+    let mostActiveDay = {
+      date: new Date().toISOString().split("T")[0],
+      completedTasks: 0,
+      createdTasks: 0,
+      totalActivity: 0,
+    };
+    Object.entries(dailyActivity).forEach(([date, data]) => {
+      const total = data.created + data.completed;
+      if (total > mostActiveDay.totalActivity) {
+        mostActiveDay = {
+          date,
+          completedTasks: data.completed,
+          createdTasks: data.created,
+          totalActivity: total,
+        };
+      }
+    });
+
+    // Find most active week
+    let mostActiveWeek = {
+      weekStart: new Date().toISOString().split("T")[0],
+      weekEnd: new Date().toISOString().split("T")[0],
+      completedTasks: 0,
+      createdTasks: 0,
+      totalActivity: 0,
+    };
+    Object.entries(weeklyActivity).forEach(([weekStart, data]) => {
+      const total = data.created + data.completed;
+      if (total > mostActiveWeek.totalActivity) {
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        mostActiveWeek = {
+          weekStart,
+          weekEnd: weekEnd.toISOString().split("T")[0],
+          completedTasks: data.completed,
+          createdTasks: data.created,
+          totalActivity: total,
+        };
+      }
+    });
+
+    // Find most active month
+    let mostActiveMonth = {
+      month: new Date().toLocaleString("default", { month: "long" }),
+      year: new Date().getFullYear(),
+      completedTasks: 0,
+      createdTasks: 0,
+      totalActivity: 0,
+    };
+    Object.entries(monthlyActivity).forEach(([monthKey, data]) => {
+      const total = data.created + data.completed;
+      if (total > mostActiveMonth.totalActivity) {
+        const [month, year] = monthKey.split("-");
+        const monthName = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+        ).toLocaleString("default", { month: "long" });
+        mostActiveMonth = {
+          month: monthName,
+          year: data.year,
+          completedTasks: data.completed,
+          createdTasks: data.created,
+          totalActivity: total,
+        };
+      }
+    });
+
+    // Get recent activity (last 30 days)
+    const now = new Date();
+    const recentActivity = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split("T")[0];
+      const activity = dailyActivity[dateStr] || { created: 0, completed: 0 };
+      recentActivity.push({
+        date: dateStr,
+        completedTasks: activity.completed,
+        createdTasks: activity.created,
+        totalActivity: activity.created + activity.completed,
+      });
+    }
+
+    return {
+      mostActiveDay,
+      mostActiveWeek,
+      mostActiveMonth,
+      recentActivity,
+    };
+  },
+});

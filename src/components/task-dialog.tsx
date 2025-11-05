@@ -217,17 +217,6 @@ export function TaskDialog({
             </div>
           </div>
 
-          {/* <div className="space-y-2">
-            <Label htmlFor="reminder">Reminder (optional)</Label>
-            <Input
-              id="reminder"
-              type="datetime-local"
-              value={reminderDate}
-              onChange={(e) => setReminderDate(e.target.value)}
-              placeholder="Set a reminder"
-            />
-          </div> */}
-
           {/* Scheduling section - only show when creating a new task */}
           {!task && (
             <div className="space-y-4 border-t pt-4">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -21,6 +22,7 @@ import type { Task, MeetingNote, TaskStatus } from "@/types";
 
 export default function Dashboard() {
   const { signOut } = useAuthActions();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Convex queries
   const projects = useQuery(api.projects.list) ?? [];
@@ -55,10 +57,28 @@ export default function Dashboard() {
   const updateListItem = useMutation(api.lists.updateListItem);
   const removeListItem = useMutation(api.lists.removeListItem);
 
-  const [selectedView, setSelectedView] = useState<string>("daily");
+  // Get view from URL or default to "daily"
+  const viewFromUrl = searchParams.get("view") || "daily";
+  const [selectedView, setSelectedView] = useState<string>(viewFromUrl);
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
+
+  // Sync URL with selectedView
+  useEffect(() => {
+    const currentView = searchParams.get("view");
+    if (currentView !== selectedView) {
+      setSearchParams({ view: selectedView });
+    }
+  }, [selectedView, searchParams, setSearchParams]);
+
+  // Sync selectedView with URL changes
+  useEffect(() => {
+    const viewParam = searchParams.get("view");
+    if (viewParam && viewParam !== selectedView) {
+      setSelectedView(viewParam);
+    }
+  }, [searchParams]);
 
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [taskViewOpen, setTaskViewOpen] = useState(false);

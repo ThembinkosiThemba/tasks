@@ -71,6 +71,10 @@ Comprehensive statistics page providing insights into productivity:
   - Highlighted section showing all tasks exceeding thresholds
   - Direct links to tasks requiring attention
 
+<p align="start">
+  <img src="./public/stats.png" alt="Statistics Dashboard" width="700" style="border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1);" />
+</p>
+
 ### Meeting Notes
 
 - **Note Taking**: Create and manage meeting notes with date association
@@ -89,24 +93,6 @@ Quick keyboard-driven navigation and actions:
 - `Cmd/Ctrl + M`: Create meeting note
 - `Cmd/Ctrl + 1-4`: Navigate between views (Tasks, Daily, Stats, Notes)
 
-## How It Works
-
-### Authentication
-
-The application uses Convex Auth for secure user authentication. Each user's data is completely isolated, and all database queries are filtered by user ID to ensure privacy.
-
-### Real-Time Synchronization
-
-Built on Convex, the application provides real-time updates across all connected clients. When you update a task on one device, the change immediately appears on all other devices without requiring a refresh.
-
-### Background Processing
-
-The cron job system runs server-side tasks on a schedule:
-
-- **Threshold Checking**: Every minute, the system evaluates all open tasks against their thresholds
-- **Notification Creation**: Automatically generates notifications for overdue or at-risk tasks
-- **Deduplication**: Ensures users don't receive multiple notifications for the same issue
-
 ## Installation
 
 1. Clone the repository:
@@ -119,7 +105,7 @@ cd tasks
 2. Install dependencies:
 
 ```bash
-npm install --legacy-peer-des
+npm install --legacy-peer-deps
 ```
 
 3. Set up Convex and server:
