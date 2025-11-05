@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import {
   Plus,
   MoreHorizontal,
@@ -39,25 +41,8 @@ import type { List } from "@/types";
 import type { Id } from "../../convex/_generated/dataModel";
 import { cardGradient, cn } from "@/lib/utils";
 
-interface ListsProps {
-  lists: List[];
-  onCreateList: (title: string, type: "pricing" | "general") => void;
-  onUpdateList: (
-    listId: Id<"lists">,
-    title?: string,
-    type?: "pricing" | "general",
-  ) => void;
-  onDeleteList: (listId: Id<"lists">) => void;
-  onAddItem: (listId: Id<"lists">, title: string, price?: number) => void;
-  onUpdateItem: (
-    listId: Id<"lists">,
-    itemIndex: number,
-    title?: string,
-    status?: "checked" | "unchecked",
-    price?: number,
-  ) => void;
-  onRemoveItem: (listId: Id<"lists">, itemIndex: number) => void;
-}
+// No props needed - component manages its own state
+interface ListsProps {}
 
 interface ListCardProps {
   list: List;
@@ -377,15 +362,18 @@ function ListCard({
   );
 }
 
-export function Lists({
-  lists,
-  onCreateList,
-  onUpdateList,
-  onDeleteList,
-  onAddItem,
-  onUpdateItem,
-  onRemoveItem,
-}: ListsProps) {
+export function Lists({}: ListsProps) {
+  // Convex queries
+  const lists = useQuery(api.lists.getLists) ?? [];
+
+  // Convex mutations
+  const createList = useMutation(api.lists.createList);
+  const updateList = useMutation(api.lists.updateList);
+  const deleteList = useMutation(api.lists.removeList);
+  const addListItem = useMutation(api.lists.addListItem);
+  const updateListItem = useMutation(api.lists.updateListItem);
+  const removeListItem = useMutation(api.lists.removeListItem);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "pricing" | "general">(
     "all",
@@ -401,17 +389,17 @@ export function Lists({
   const [formTitle, setFormTitle] = useState("");
   const [formType, setFormType] = useState<"pricing" | "general">("general");
 
-  const handleCreateList = () => {
+  const handleCreateList = async () => {
     if (!formTitle.trim()) return;
-    onCreateList(formTitle, formType);
+    await createList({ title: formTitle, type: formType });
     setFormTitle("");
     setFormType("general");
     setShowCreateDialog(false);
   };
 
-  const handleEditList = () => {
+  const handleEditList = async () => {
     if (!editingList || !formTitle.trim()) return;
-    onUpdateList(editingList._id, formTitle, formType);
+    await updateList({ _id: editingList._id, title: formTitle, type: formType });
     setShowEditDialog(false);
     setEditingList(null);
     setFormTitle("");
@@ -585,25 +573,30 @@ export function Lists({
                   key={list._id}
                   list={list}
                   onEdit={() => openEditDialog(list)}
-                  onDelete={() => onDeleteList(list._id)}
+                  onDelete={() => void deleteList({ _id: list._id })}
                   onToggleItem={(itemIndex) =>
-                    onUpdateItem(
-                      list._id,
+                    void updateListItem({
+                      listId: list._id,
                       itemIndex,
-                      undefined,
-                      list.items[itemIndex].status === "checked"
-                        ? "unchecked"
-                        : "checked",
-                    )
+                      status:
+                        list.items[itemIndex].status === "checked"
+                          ? "unchecked"
+                          : "checked",
+                    })
                   }
                   onAddItem={(title, price) =>
-                    onAddItem(list._id, title, price)
+                    void addListItem({ listId: list._id, title, price })
                   }
                   onEditItem={(itemIndex, title, price) =>
-                    onUpdateItem(list._id, itemIndex, title, undefined, price)
+                    void updateListItem({
+                      listId: list._id,
+                      itemIndex,
+                      title,
+                      price,
+                    })
                   }
                   onRemoveItem={(itemIndex) =>
-                    onRemoveItem(list._id, itemIndex)
+                    void removeListItem({ listId: list._id, itemIndex })
                   }
                   onExport={() => openExportDialog(list)}
                 />

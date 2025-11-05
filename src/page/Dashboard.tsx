@@ -31,7 +31,6 @@ export default function Dashboard() {
   const isTasksLoading = tasksQuery === undefined;
   const dailyTasks = useQuery(api.dailyTasks.list, {}) ?? [];
   const meetingNotes = useQuery(api.notes.list) ?? [];
-  const lists = useQuery(api.lists.getLists) ?? [];
 
   // Convex mutations
   const createProject = useMutation(api.projects.create);
@@ -50,12 +49,6 @@ export default function Dashboard() {
   const deleteNote = useMutation(api.notes.remove);
   const togglePinNote = useMutation(api.notes.togglePin);
   const toggleStarNote = useMutation(api.notes.toggleStar);
-  const createList = useMutation(api.lists.createList);
-  const updateList = useMutation(api.lists.updateList);
-  const deleteList = useMutation(api.lists.removeList);
-  const addListItem = useMutation(api.lists.addListItem);
-  const updateListItem = useMutation(api.lists.updateListItem);
-  const removeListItem = useMutation(api.lists.removeListItem);
 
   // Get view from URL or default to "daily"
   const viewFromUrl = searchParams.get("view") || "daily";
@@ -271,47 +264,6 @@ export default function Dashboard() {
     await toggleStarNote({ noteId });
   };
 
-  const handleCreateList = async (title: string, type: "pricing" | "general") => {
-    await createList({ title, type });
-  };
-
-  const handleUpdateList = async (
-    listId: Id<"lists">,
-    title?: string,
-    type?: "pricing" | "general",
-  ) => {
-    await updateList({ _id: listId, title, type });
-  };
-
-  const handleDeleteList = async (listId: Id<"lists">) => {
-    await deleteList({ _id: listId });
-  };
-
-  const handleAddListItem = async (
-    listId: Id<"lists">,
-    title: string,
-    price?: number,
-  ) => {
-    await addListItem({ listId, title, price });
-  };
-
-  const handleUpdateListItem = async (
-    listId: Id<"lists">,
-    itemIndex: number,
-    title?: string,
-    status?: "checked" | "unchecked",
-    price?: number,
-  ) => {
-    await updateListItem({ listId, itemIndex, title, status, price });
-  };
-
-  const handleRemoveListItem = async (
-    listId: Id<"lists">,
-    itemIndex: number,
-  ) => {
-    await removeListItem({ listId, itemIndex });
-  };
-
   const handleUpdateDailyTask = async (
     dailyTaskId: Id<"dailyTasks">,
     date: string,
@@ -389,15 +341,7 @@ export default function Dashboard() {
         ) : selectedView === "stats" ? (
           <StatsPage />
         ) : selectedView === "lists" ? (
-          <Lists
-            lists={lists}
-            onCreateList={handleCreateList}
-            onUpdateList={handleUpdateList}
-            onDeleteList={handleDeleteList}
-            onAddItem={handleAddListItem}
-            onUpdateItem={handleUpdateListItem}
-            onRemoveItem={handleRemoveListItem}
-          />
+          <Lists />
         ) : selectedView === "notes" ? (
           <MeetingNotes
             notes={meetingNotes}
