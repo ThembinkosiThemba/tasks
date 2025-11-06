@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader } from "lucide-react";
 import type { MeetingNote } from "@/types";
 
 interface MeetingNoteDialogProps {
@@ -27,6 +28,7 @@ export function MeetingNoteDialog({
 }: MeetingNoteDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (note) {
@@ -38,14 +40,19 @@ export function MeetingNoteDialog({
     }
   }, [note, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      title,
-      content,
-      date: new Date().toISOString().split("T")[0], // Auto-set to today
-    });
-    onOpenChange(false);
+    setIsLoading(true);
+    try {
+      await onSave({
+        title,
+        content,
+        date: new Date().toISOString().split("T")[0], // Auto-set to today
+      });
+      onOpenChange(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -88,11 +95,18 @@ export function MeetingNoteDialog({
               Date will be set to today
             </span>
             <div className="flex gap-2">
-              <Button type="button" onClick={() => onOpenChange(false)}>
+              <Button type="button" onClick={() => onOpenChange(false)} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button variant={"secondary"} type="submit">
-                Save
+              <Button variant={"secondary"} type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
               </Button>
             </div>
           </div>

@@ -33,7 +33,9 @@ interface MeetingNotesProps {
   onAddNote: () => void;
   onEditNote: (note: MeetingNote) => void;
   onDeleteNote: (noteId: Id<"meetingNotes">) => void;
-  onSaveNote: (noteData: Partial<MeetingNote>) => Promise<Id<"meetingNotes"> | void>;
+  onSaveNote: (
+    noteData: Partial<MeetingNote>,
+  ) => Promise<Id<"meetingNotes"> | void>;
   onTogglePin: (noteId: Id<"meetingNotes">) => void;
   onToggleStar: (noteId: Id<"meetingNotes">) => void;
 }
@@ -47,7 +49,14 @@ interface NoteCardProps {
   onToggleStar: () => void;
 }
 
-function NoteCard({ note, onEdit, onDelete, onView, onTogglePin, onToggleStar }: NoteCardProps) {
+function NoteCard({
+  note,
+  onEdit,
+  onDelete,
+  onView,
+  onTogglePin,
+  onToggleStar,
+}: NoteCardProps) {
   const formattedDate = new Date(note.date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -98,7 +107,6 @@ function NoteCard({ note, onEdit, onDelete, onView, onTogglePin, onToggleStar }:
               <span>{formattedDate}</span>
             </div>
           </div>
-
         </div>
 
         {/* Preview content */}
@@ -122,19 +130,29 @@ function NoteCard({ note, onEdit, onDelete, onView, onTogglePin, onToggleStar }:
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 px-2 text-xs gap-1.5", note.starred && "text-yellow-500")}
+              className={cn(
+                "h-8 px-2 text-xs gap-1.5",
+                note.starred && "text-yellow-500",
+              )}
               onClick={onToggleStar}
             >
-              <Star className={cn("h-3.5 w-3.5", note.starred && "fill-current")} />
+              <Star
+                className={cn("h-3.5 w-3.5", note.starred && "fill-current")}
+              />
               <span>{note.starred ? "Starred" : "Star"}</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 px-2 text-xs gap-1.5", note.pinned && "text-primary")}
+              className={cn(
+                "h-8 px-2 text-xs gap-1.5",
+                note.pinned && "text-primary",
+              )}
               onClick={onTogglePin}
             >
-              <Pin className={cn("h-3.5 w-3.5", note.pinned && "fill-current")} />
+              <Pin
+                className={cn("h-3.5 w-3.5", note.pinned && "fill-current")}
+              />
               <span>{note.pinned ? "Pinned" : "Pin"}</span>
             </Button>
           </div>
@@ -160,7 +178,9 @@ function NoteCard({ note, onEdit, onDelete, onView, onTogglePin, onToggleStar }:
                 className={cn("h-8 w-8", note.starred && "text-yellow-500")}
                 onClick={onToggleStar}
               >
-                <Star className={cn("h-3.5 w-3.5", note.starred && "fill-current")} />
+                <Star
+                  className={cn("h-3.5 w-3.5", note.starred && "fill-current")}
+                />
               </Button>
               <Button
                 variant="ghost"
@@ -168,7 +188,9 @@ function NoteCard({ note, onEdit, onDelete, onView, onTogglePin, onToggleStar }:
                 className={cn("h-8 w-8", note.pinned && "text-primary")}
                 onClick={onTogglePin}
               >
-                <Pin className={cn("h-3.5 w-3.5", note.pinned && "fill-current")} />
+                <Pin
+                  className={cn("h-3.5 w-3.5", note.pinned && "fill-current")}
+                />
               </Button>
             </div>
 
@@ -211,8 +233,11 @@ export function MeetingNotes({
   const [editingNote, setEditingNote] = useState<MeetingNote | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [deleteConfirmNote, setDeleteConfirmNote] = useState<MeetingNote | null>(null);
-  const [activeFilter, setActiveFilter] = useState<"all" | "pinned" | "starred">("all");
+  const [deleteConfirmNote, setDeleteConfirmNote] =
+    useState<MeetingNote | null>(null);
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "pinned" | "starred"
+  >("all");
 
   // Editor state
   const [title, setTitle] = useState("");
@@ -418,7 +443,10 @@ export function MeetingNotes({
     if (diffDays < 30) return "This Month";
 
     // Format as "Month Year" for older notes
-    return noteDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    return noteDate.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
   };
 
   const filteredNotes = notes
@@ -428,10 +456,13 @@ export function MeetingNotes({
         note.content.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesFilter =
-        activeFilter === "all" ? true :
-        activeFilter === "pinned" ? note.pinned :
-        activeFilter === "starred" ? note.starred :
-        true;
+        activeFilter === "all"
+          ? true
+          : activeFilter === "pinned"
+            ? note.pinned
+            : activeFilter === "starred"
+              ? note.starred
+              : true;
 
       return matchesSearch && matchesFilter;
     })
@@ -444,14 +475,17 @@ export function MeetingNotes({
     });
 
   // Group notes by date
-  const groupedNotes = filteredNotes.reduce((groups, note) => {
-    const label = getDateLabel(note.date);
-    if (!groups[label]) {
-      groups[label] = [];
-    }
-    groups[label].push(note);
-    return groups;
-  }, {} as Record<string, MeetingNote[]>);
+  const groupedNotes = filteredNotes.reduce(
+    (groups, note) => {
+      const label = getDateLabel(note.date);
+      if (!groups[label]) {
+        groups[label] = [];
+      }
+      groups[label].push(note);
+      return groups;
+    },
+    {} as Record<string, MeetingNote[]>,
+  );
 
   // Define the order of groups
   const groupOrder = ["Today", "Yesterday", "This Week", "This Month"];
@@ -498,7 +532,7 @@ export function MeetingNotes({
                 <Button
                   onClick={() => setIsEditMode(true)}
                   size="sm"
-                  variant="secondary"
+                  variant="default"
                   className="shadow-sm"
                 >
                   <Pencil className="h-3.5 w-3.5 mr-1.5" />
@@ -511,7 +545,6 @@ export function MeetingNotes({
                   disabled={isSaving || (!title.trim() && !content.trim())}
                   size="sm"
                   className="shadow-sm"
-                  variant={"secondary"}
                 >
                   {isSaving ? (
                     <>
@@ -619,7 +652,7 @@ export function MeetingNotes({
                   "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                   activeFilter === "all"
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50",
                 )}
               >
                 All
@@ -630,10 +663,15 @@ export function MeetingNotes({
                   "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-1.5",
                   activeFilter === "pinned"
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50",
                 )}
               >
-                <Pin className={cn("h-3.5 w-3.5", activeFilter === "pinned" && "fill-current")} />
+                <Pin
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    activeFilter === "pinned" && "fill-current",
+                  )}
+                />
                 <span className="hidden sm:inline">Pinned</span>
               </button>
               <button
@@ -642,10 +680,15 @@ export function MeetingNotes({
                   "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-1.5",
                   activeFilter === "starred"
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50",
                 )}
               >
-                <Star className={cn("h-3.5 w-3.5", activeFilter === "starred" && "fill-current")} />
+                <Star
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    activeFilter === "starred" && "fill-current",
+                  )}
+                />
                 <span className="hidden sm:inline">Starred</span>
               </button>
             </div>
@@ -678,7 +721,8 @@ export function MeetingNotes({
                   </div>
                   <div className="h-px flex-1 bg-gradient-to-r from-border/50 to-transparent" />
                   <span className="text-xs text-muted-foreground">
-                    {groupedNotes[groupLabel].length} {groupedNotes[groupLabel].length === 1 ? "note" : "notes"}
+                    {groupedNotes[groupLabel].length}{" "}
+                    {groupedNotes[groupLabel].length === 1 ? "note" : "notes"}
                   </span>
                 </div>
 
@@ -711,7 +755,8 @@ export function MeetingNotes({
           <DialogHeader>
             <DialogTitle>Delete Note?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteConfirmNote?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{deleteConfirmNote?.title}"? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

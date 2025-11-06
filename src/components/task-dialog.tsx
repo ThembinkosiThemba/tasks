@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader } from "lucide-react";
 import type { Task, Project, TaskType } from "@/types";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -51,6 +52,7 @@ export function TaskDialog({
   const [priority, setPriority] = useState<Task["priority"]>("medium");
   const [taskType, setTaskType] = useState<string>("general");
   const [reminderDate, setReminderDate] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Scheduling fields
   const [shouldSchedule, setShouldSchedule] = useState(false);
@@ -92,26 +94,38 @@ export function TaskDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const savedTask = await onSave({
-      title,
-      description,
-      projectId: projectId === "none" ? undefined : (projectId as any),
-      status,
-      priority,
-      type: taskType === "general" ? undefined : (taskType as TaskType),
-      reminderDate: reminderDate ? new Date(reminderDate).getTime() : undefined,
-    });
+    setIsLoading(true);
+    try {
+      const savedTask = await onSave({
+        title,
+        description,
+        projectId: projectId === "none" ? undefined : (projectId as any),
+        status,
+        priority,
+        type: taskType === "general" ? undefined : (taskType as TaskType),
+        reminderDate: reminderDate
+          ? new Date(reminderDate).getTime()
+          : undefined,
+      });
 
-    // If scheduling is enabled and this is a new task, schedule it
-    if (shouldSchedule && !task && onSchedule && savedTask) {
-      if (useTimeBlock) {
-        onSchedule(savedTask as Id<"tasks">, scheduleDate, startTime, endTime);
-      } else {
-        onSchedule(savedTask as Id<"tasks">, scheduleDate);
+      // If scheduling is enabled and this is a new task, schedule it
+      if (shouldSchedule && !task && onSchedule && savedTask) {
+        if (useTimeBlock) {
+          onSchedule(
+            savedTask as Id<"tasks">,
+            scheduleDate,
+            startTime,
+            endTime,
+          );
+        } else {
+          onSchedule(savedTask as Id<"tasks">, scheduleDate);
+        }
       }
-    }
 
-    onOpenChange(false);
+      onOpenChange(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -296,11 +310,27 @@ export function TaskDialog({
           )}
 
           <div className="flex justify-end gap-2">
-            <Button type="button" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button variant="secondary" type="submit">
-              Save
+            <Button
+              variant={"outline"}
+              className="text-black"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </form>

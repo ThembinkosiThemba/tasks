@@ -13,6 +13,7 @@ import {
   ListTodo,
   Share2,
   Download,
+  Loader,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import type { List } from "@/types";
-import type { Id } from "../../convex/_generated/dataModel";
 import { cardGradient, cn } from "@/lib/utils";
 
 // No props needed - component manages its own state
@@ -77,7 +77,9 @@ function ListCard({
     ? list.items.reduce((sum, item) => sum + (item.price || 0), 0)
     : 0;
 
-  const completedCount = list.items.filter(item => item.status === "checked").length;
+  const completedCount = list.items.filter(
+    (item) => item.status === "checked",
+  ).length;
 
   const handleAddItem = () => {
     if (!newItemTitle.trim()) return;
@@ -133,7 +135,9 @@ function ListCard({
               <h3 className="font-semibold text-base truncate">{list.title}</h3>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{list.items.length} {list.items.length === 1 ? 'item' : 'items'}</span>
+              <span>
+                {list.items.length} {list.items.length === 1 ? "item" : "items"}
+              </span>
               {list.items.length > 0 && (
                 <>
                   <span>•</span>
@@ -167,7 +171,10 @@ function ListCard({
                   <Pencil className="mr-2 h-3.5 w-3.5" />
                   Edit list
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-destructive"
+                >
                   <Trash className="mr-2 h-3.5 w-3.5" />
                   Delete list
                 </DropdownMenuItem>
@@ -213,7 +220,11 @@ function ListCard({
                     />
                   )}
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={handleEditItem} className="flex-1 h-8 text-xs">
+                    <Button
+                      size="sm"
+                      onClick={handleEditItem}
+                      className="flex-1 h-8 text-xs"
+                    >
                       <Check className="h-3 w-3 mr-1" />
                       Save
                     </Button>
@@ -250,7 +261,10 @@ function ListCard({
                   </span>
                   {isPricing && (
                     <div className="text-sm font-semibold text-primary tabular-nums">
-                      E {item.price !== undefined ? item.price.toFixed(2) : "0.00"}
+                      E{" "}
+                      {item.price !== undefined
+                        ? item.price.toFixed(2)
+                        : "0.00"}
                     </div>
                   )}
                   <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
@@ -313,7 +327,11 @@ function ListCard({
               />
             )}
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleAddItem} className="flex-1 h-8 text-xs">
+              <Button
+                size="sm"
+                onClick={handleAddItem}
+                className="flex-1 h-8 text-xs"
+              >
                 <Check className="h-3 w-3 mr-1" />
                 Add
               </Button>
@@ -384,6 +402,8 @@ export function Lists({}: ListsProps) {
   const [editingList, setEditingList] = useState<List | null>(null);
   const [exportingList, setExportingList] = useState<List | null>(null);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Create/Edit form state
   const [formTitle, setFormTitle] = useState("");
@@ -391,19 +411,33 @@ export function Lists({}: ListsProps) {
 
   const handleCreateList = async () => {
     if (!formTitle.trim()) return;
-    await createList({ title: formTitle, type: formType });
-    setFormTitle("");
-    setFormType("general");
-    setShowCreateDialog(false);
+    setIsCreating(true);
+    try {
+      await createList({ title: formTitle, type: formType });
+      setFormTitle("");
+      setFormType("general");
+      setShowCreateDialog(false);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleEditList = async () => {
     if (!editingList || !formTitle.trim()) return;
-    await updateList({ _id: editingList._id, title: formTitle, type: formType });
-    setShowEditDialog(false);
-    setEditingList(null);
-    setFormTitle("");
-    setFormType("general");
+    setIsEditing(true);
+    try {
+      await updateList({
+        _id: editingList._id,
+        title: formTitle,
+        type: formType,
+      });
+      setShowEditDialog(false);
+      setEditingList(null);
+      setFormTitle("");
+      setFormType("general");
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   const openEditDialog = (list: List) => {
@@ -648,10 +682,20 @@ export function Lists({}: ListsProps) {
               <Button
                 variant="outline"
                 onClick={() => setShowCreateDialog(false)}
+                disabled={isCreating}
               >
                 Cancel
               </Button>
-              <Button onClick={handleCreateList}>Create List</Button>
+              <Button onClick={handleCreateList} disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create List"
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -694,11 +738,19 @@ export function Lists({}: ListsProps) {
               <Button
                 variant="default"
                 onClick={() => setShowEditDialog(false)}
+                disabled={isEditing}
               >
                 Cancel
               </Button>
-              <Button variant={"secondary"} onClick={handleEditList}>
-                Save Changes
+              <Button variant={"secondary"} onClick={handleEditList} disabled={isEditing}>
+                {isEditing ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
               </Button>
             </div>
           </div>

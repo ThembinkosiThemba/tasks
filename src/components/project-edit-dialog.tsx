@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Loader } from "lucide-react";
 import type { Project } from "@/types";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -50,6 +50,7 @@ export function ProjectEditDialog({
   const [color, setColor] = useState(project.color);
   const [tags, setTags] = useState<string[]>(project.tags || []);
   const [tagInput, setTagInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Update state when project changes
   useEffect(() => {
@@ -60,16 +61,21 @@ export function ProjectEditDialog({
     setTagInput("");
   }, [project]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(
-      project._id,
-      name,
-      description || undefined,
-      color,
-      tags.length > 0 ? tags : undefined,
-    );
-    onOpenChange(false);
+    setIsLoading(true);
+    try {
+      await onSave(
+        project._id,
+        name,
+        description || undefined,
+        color,
+        tags.length > 0 ? tags : undefined,
+      );
+      onOpenChange(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -170,10 +176,20 @@ export function ProjectEditDialog({
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
+              disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </div>
         </form>
       </DialogContent>
