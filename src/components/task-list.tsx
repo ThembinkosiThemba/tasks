@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -33,6 +33,7 @@ import {
   ArrowUpDown,
   Check,
   AlertTriangle,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +87,11 @@ function TaskCard({
   isDragging = false,
 }: TaskCardProps) {
   const [updatingElement, setUpdatingElement] = useState<string | null>(null);
+
+  const copyTaskDetails = () => {
+    const formatted = `title=${task.title}, description=${task.description || ""}`;
+    navigator.clipboard.writeText(formatted);
+  };
 
   const {
     attributes,
@@ -320,6 +326,10 @@ function TaskCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-dark dark">
+              <DropdownMenuItem onClick={copyTaskDetails}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Task
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onEdit}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -573,6 +583,7 @@ export function TaskList({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [doneTasksLimit, setDoneTasksLimit] = useState(5);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [columnSortBy, setColumnSortBy] = useState<{
     todo: "newest" | "oldest";
     "in-progress": "newest" | "oldest";
@@ -617,6 +628,40 @@ export function TaskList({
       },
     }),
   );
+
+  // Auto-focus search on keyboard typing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if already typing in an input, textarea, or contenteditable
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Ignore modifier keys, special keys, etc.
+      if (
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.key.length !== 1 ||
+        e.key === " "
+      ) {
+        return;
+      }
+
+      // Focus search input and let the key be typed naturally
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch =
@@ -763,6 +808,7 @@ export function TaskList({
             <div className="relative flex-1 max-w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
+                ref={searchInputRef}
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

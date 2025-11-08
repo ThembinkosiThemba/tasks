@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   ArrowRight,
   Trash,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,11 @@ export function DailySchedule({
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
   const [clickedArrow, setClickedArrow] = useState<string | null>(null);
+
+  const copyTaskDetails = (task: Task) => {
+    const formatted = `title=${task.title}, description=${task.description || ""}`;
+    navigator.clipboard.writeText(formatted);
+  };
 
   const moveToTomorrow = (dailyTask: DailyTask) => {
     const tomorrow = new Date(selectedDate);
@@ -126,10 +132,22 @@ export function DailySchedule({
 
   const getStatusConfig = (status: Task["status"]) => {
     const configs = {
-      todo: { label: "To Do", color: "bg-blue-500/10 text-blue-500 border-blue-500/30" },
-      "in-progress": { label: "In Progress", color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30" },
-      review: { label: "Review", color: "bg-orange-500/10 text-orange-500 border-orange-500/30" },
-      done: { label: "Done", color: "bg-green-500/10 text-green-500 border-green-500/30" },
+      todo: {
+        label: "To Do",
+        color: "bg-blue-500/10 text-blue-500 border-blue-500/30",
+      },
+      "in-progress": {
+        label: "In Progress",
+        color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30",
+      },
+      review: {
+        label: "Review",
+        color: "bg-orange-500/10 text-orange-500 border-orange-500/30",
+      },
+      done: {
+        label: "Done",
+        color: "bg-green-500/10 text-green-500 border-green-500/30",
+      },
     };
     return configs[status];
   };
@@ -454,7 +472,8 @@ export function DailySchedule({
                                         <ChevronLeft
                                           className={cn(
                                             "h-3.5 w-3.5 transition-transform",
-                                            clickedArrow === `${task._id}-prev` &&
+                                            clickedArrow ===
+                                              `${task._id}-prev` &&
                                               "rotate-[-360deg]",
                                           )}
                                         />
@@ -492,7 +511,8 @@ export function DailySchedule({
                                         <ChevronRight
                                           className={cn(
                                             "h-3.5 w-3.5 transition-transform",
-                                            clickedArrow === `${task._id}-next` &&
+                                            clickedArrow ===
+                                              `${task._id}-next` &&
                                               "rotate-[360deg]",
                                           )}
                                         />
@@ -517,6 +537,12 @@ export function DailySchedule({
                                 align="end"
                                 className="bg-dark dark"
                               >
+                                <DropdownMenuItem
+                                  onClick={() => copyTaskDetails(task)}
+                                >
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  Copy Task
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => moveToTomorrow(dailyTask)}
                                 >
@@ -635,7 +661,8 @@ export function DailySchedule({
                                           <ChevronLeft
                                             className={cn(
                                               "h-3 w-3 transition-transform",
-                                              clickedArrow === `${task._id}-prev` &&
+                                              clickedArrow ===
+                                                `${task._id}-prev` &&
                                                 "rotate-[-360deg]",
                                             )}
                                           />
@@ -673,7 +700,8 @@ export function DailySchedule({
                                           <ChevronRight
                                             className={cn(
                                               "h-3 w-3 transition-transform",
-                                              clickedArrow === `${task._id}-next` &&
+                                              clickedArrow ===
+                                                `${task._id}-next` &&
                                                 "rotate-[360deg]",
                                             )}
                                           />
@@ -698,6 +726,12 @@ export function DailySchedule({
                                   align="end"
                                   className="bg-dark dark"
                                 >
+                                  <DropdownMenuItem
+                                    onClick={() => copyTaskDetails(task)}
+                                  >
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Copy Task
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => moveToTomorrow(dailyTask)}
                                   >

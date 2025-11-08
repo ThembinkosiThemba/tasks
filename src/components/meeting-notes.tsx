@@ -249,6 +249,7 @@ export function MeetingNotes({
   const initialTitleRef = useRef("");
   const initialContentRef = useRef("");
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Track unsaved changes
   useEffect(() => {
@@ -313,6 +314,45 @@ export function MeetingNotes({
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges, isCreatingNew, editingNote]);
+
+  const showEditor = isCreatingNew || viewingNote !== null;
+
+  // Auto-focus search on keyboard typing
+  useEffect(() => {
+    // Only enable when viewing the list (not in editor/viewer mode)
+    if (showEditor) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if already typing in an input, textarea, or contenteditable
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Ignore modifier keys, special keys, etc.
+      if (
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.key.length !== 1 ||
+        e.key === " "
+      ) {
+        return;
+      }
+
+      // Focus search input and let the key be typed naturally
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showEditor]);
 
   const handleCreateNote = () => {
     setIsCreatingNew(true);
@@ -504,7 +544,6 @@ export function MeetingNotes({
   });
 
   // Show editor/viewer if creating, editing, or viewing
-  const showEditor = isCreatingNew || viewingNote !== null;
 
   // Full-window editor/viewer view
   if (showEditor) {
@@ -637,6 +676,7 @@ export function MeetingNotes({
             <div className="relative flex-1 max-w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
+                ref={searchInputRef}
                 placeholder="Search notes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
