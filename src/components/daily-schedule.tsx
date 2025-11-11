@@ -12,9 +12,12 @@ import {
   ArrowRight,
   Trash,
   Copy,
+  Search,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +45,7 @@ interface DailyScheduleProps {
   ) => void;
   onRemoveDailyTask: (dailyTaskId: Id<"dailyTasks">) => void;
   onUpdateTaskStatus: (taskId: Id<"tasks">, status: Task["status"]) => void;
+  onEditTask: (task: Task) => void;
 }
 
 export function DailySchedule({
@@ -55,8 +59,11 @@ export function DailySchedule({
   onUpdateDailyTask,
   onRemoveDailyTask,
   onUpdateTaskStatus,
+  onEditTask,
 }: DailyScheduleProps) {
   const [filterProject, setFilterProject] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
   const [clickedArrow, setClickedArrow] = useState<string | null>(null);
 
@@ -160,11 +167,29 @@ export function DailySchedule({
     .sort((a, b) => Number(a.completed) - Number(b.completed))
     .filter((dt) => dt.date === selectedDate)
     .filter((dt) => {
-      if (!filterProject) return true;
       const task = getTask(dt.taskId);
       if (!task) return false;
-      if (filterProject === "none") return !task.projectId;
-      return task.projectId === filterProject;
+
+      // Project filter
+      if (filterProject) {
+        if (filterProject === "none" && task.projectId) return false;
+        if (filterProject !== "none" && task.projectId !== filterProject) return false;
+      }
+
+      // Search filter
+      if (searchQuery) {
+        const matchesSearch =
+          task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        if (!matchesSearch) return false;
+      }
+
+      // Status filter
+      if (statusFilter !== "all") {
+        if (task.status !== statusFilter) return false;
+      }
+
+      return true;
     });
 
   const changeDate = (days: number) => {
@@ -183,6 +208,25 @@ export function DailySchedule({
   const totalCount = todaySchedule.length;
   const completionPercentage =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  // Group time-blocked tasks by time slot
+  const groupedTimeBlocks = todaySchedule
+    .filter((dt) => dt.startTime && dt.endTime)
+    .reduce((groups, dt) => {
+      const key = `${dt.startTime}-${dt.endTime}`;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(dt);
+      return groups;
+    }, {} as Record<string, DailyTask[]>);
+
+  // Sort groups by start time
+  const sortedTimeBlockKeys = Object.keys(groupedTimeBlocks).sort((a, b) => {
+    const [startA] = a.split("-");
+    const [startB] = b.split("-");
+    return startA.localeCompare(startB);
+  });
 
   return (
     <div className="flex-1 overflow-auto bg-dark dark">
@@ -291,6 +335,62 @@ export function DailySchedule({
             </div>
           </div>
 
+          {/* Search and Status Filter */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-9"
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Status:</span>
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                size="sm"
+                className="h-7 rounded-full text-xs"
+                onClick={() => setStatusFilter("all")}
+              >
+                All
+              </Button>
+              <Button
+                variant={statusFilter === "todo" ? "default" : "outline"}
+                size="sm"
+                className="h-7 rounded-full text-xs"
+                onClick={() => setStatusFilter("todo")}
+              >
+                To Do
+              </Button>
+              <Button
+                variant={statusFilter === "in-progress" ? "default" : "outline"}
+                size="sm"
+                className="h-7 rounded-full text-xs"
+                onClick={() => setStatusFilter("in-progress")}
+              >
+                In Progress
+              </Button>
+              <Button
+                variant={statusFilter === "review" ? "default" : "outline"}
+                size="sm"
+                className="h-7 rounded-full text-xs"
+                onClick={() => setStatusFilter("review")}
+              >
+                Review
+              </Button>
+              <Button
+                variant={statusFilter === "done" ? "default" : "outline"}
+                size="sm"
+                className="h-7 rounded-full text-xs"
+                onClick={() => setStatusFilter("done")}
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+
           {/* Project Filter Pills */}
           <div className="flex items-center gap-2 flex-wrap">
             <Button
@@ -359,45 +459,65 @@ export function DailySchedule({
           ) : (
             <>
               {/* Time-blocked tasks */}
-              {todaySchedule.filter((dt) => dt.startTime && dt.endTime).length >
-                0 && (
+              {sortedTimeBlockKeys.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-muted-foreground px-1">
                     Time Blocked
                   </h3>
-                  {todaySchedule
-                    .filter((dt) => dt.startTime && dt.endTime)
-                    .sort((a, b) =>
-                      (a.startTime || "").localeCompare(b.startTime || ""),
-                    )
-                    .map((dailyTask, index) => {
-                      const task = getTask(dailyTask.taskId);
-                      if (!task) return null;
+                  {sortedTimeBlockKeys.map((timeBlockKey, blockIndex) => {
+                    const tasksInBlock = groupedTimeBlocks[timeBlockKey];
+                    const [startTime, endTime] = timeBlockKey.split("-");
 
-                      const project = getProject(task.projectId);
+                    return (
+                      <div
+                        key={timeBlockKey}
+                        className="group bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4 md:p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
+                        style={{ animationDelay: `${blockIndex * 50}ms` }}
+                      >
+                        <div className="flex items-start gap-3 md:gap-4">
+                          {/* Time Block Header */}
+                          <div className="flex flex-col items-center gap-1 min-w-[70px] md:min-w-[80px] shrink-0">
+                            <Badge
+                              variant="outline"
+                              className="font-mono text-xs px-2 py-1 bg-primary/5 border-primary/20"
+                            >
+                              {startTime}
+                            </Badge>
+                            <div className="h-4 md:h-6 w-px bg-border" />
+                            <Badge
+                              variant="outline"
+                              className="font-mono text-xs px-2 py-1 bg-muted"
+                            >
+                              {endTime}
+                            </Badge>
+                            {tasksInBlock.length > 1 && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] px-1.5 py-0.5 mt-2"
+                              >
+                                {tasksInBlock.length} tasks
+                              </Badge>
+                            )}
+                          </div>
 
-                      return (
-                        <div
-                          key={dailyTask._id}
-                          className="group bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 rounded-xl p-4 md:p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-slide-in"
-                          style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                          <div className="flex items-start gap-3 md:gap-4">
-                            <div className="flex flex-col items-center gap-1 min-w-[70px] md:min-w-[80px] shrink-0">
-                              <Badge
-                                variant="outline"
-                                className="font-mono text-xs px-2 py-1 bg-primary/5 border-primary/20"
-                              >
-                                {dailyTask.startTime}
-                              </Badge>
-                              <div className="h-4 md:h-6 w-px bg-border" />
-                              <Badge
-                                variant="outline"
-                                className="font-mono text-xs px-2 py-1 bg-muted"
-                              >
-                                {dailyTask.endTime}
-                              </Badge>
-                            </div>
+                          {/* Tasks in this time block */}
+                          <div className="flex-1 space-y-3">
+                            {tasksInBlock.map((dailyTask) => {
+                              const task = getTask(dailyTask.taskId);
+                              if (!task) return null;
+
+                              const project = getProject(task.projectId);
+
+                              return (
+                                <div
+                                  key={dailyTask._id}
+                                  className={cn(
+                                    "flex items-start gap-3 md:gap-4 p-3 rounded-lg border",
+                                    tasksInBlock.length > 1
+                                      ? "bg-background/30 border-border/30"
+                                      : "border-transparent"
+                                  )}
+                                >
 
                             <button
                               onClick={() => onToggleComplete(dailyTask._id)}
@@ -544,6 +664,12 @@ export function DailySchedule({
                                   Copy Task
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  onClick={() => onEditTask(task)}
+                                >
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Edit Task
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   onClick={() => moveToTomorrow(dailyTask)}
                                 >
                                   <ArrowRight className="mr-2 h-4 w-4" />
@@ -560,10 +686,14 @@ export function DailySchedule({
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -731,6 +861,12 @@ export function DailySchedule({
                                   >
                                     <Copy className="mr-2 h-4 w-4" />
                                     Copy Task
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => onEditTask(task)}
+                                  >
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit Task
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => moveToTomorrow(dailyTask)}

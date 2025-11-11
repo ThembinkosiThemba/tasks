@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * List all daily tasks for the current user
@@ -136,6 +137,71 @@ export const create = mutation({
     });
 
     return dailyTaskId;
+  },
+});
+
+/**
+ * Create multiple daily tasks at once (for time block grouping)
+ */
+export const createMany = mutation({
+  args: {
+    taskIds: v.array(v.id("tasks")),
+    date: v.string(),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
+    completed: v.optional(v.boolean()),
+  },
+  returns: v.array(v.id("dailyTasks")),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const dailyTaskIds: Id<"dailyTasks">[] = [];
+    const errors: string[] = [];
+
+    for (const taskId of args.taskIds) {
+      // Verify the task exists and belongs to the user
+      const task = await ctx.db.get(taskId);
+      if (!task || task.userId !== userId) {
+        errors.push(`Task ${taskId} not found or unauthorized`);
+        continue;
+      }
+
+      // Check if task is already scheduled for this date
+      const existingSchedule = await ctx.db
+        .query("dailyTasks")
+        .withIndex("by_user_and_date", (q) =>
+          q.eq("userId", userId).eq("date", args.date)
+        )
+        .filter((q) => q.eq(q.field("taskId"), taskId))
+        .first();
+
+      if (existingSchedule) {
+        errors.push(`Task "${task.title}" is already scheduled for this date`);
+        continue;
+      }
+
+      // Create the daily task
+      const dailyTaskId = await ctx.db.insert("dailyTasks", {
+        taskId: taskId,
+        date: args.date,
+        startTime: args.startTime,
+        endTime: args.endTime,
+        completed: args.completed ?? false,
+        userId: userId,
+      });
+
+      dailyTaskIds.push(dailyTaskId);
+    }
+
+    // If there were errors but some succeeded, we still return the successful ones
+    if (errors.length > 0 && dailyTaskIds.length === 0) {
+      throw new Error(errors.join("; "));
+    }
+
+    return dailyTaskIds;
   },
 });
 

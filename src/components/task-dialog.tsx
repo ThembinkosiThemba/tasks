@@ -30,7 +30,7 @@ interface TaskDialogProps {
   projects: Project[];
   onSave: (task: Partial<Task>) => Promise<Id<"tasks"> | void>;
   onSchedule?: (
-    taskId: Id<"tasks">,
+    taskIds: Id<"tasks">[],
     date: string,
     startTime?: string,
     endTime?: string,
@@ -112,13 +112,13 @@ export function TaskDialog({
       if (shouldSchedule && !task && onSchedule && savedTask) {
         if (useTimeBlock) {
           onSchedule(
-            savedTask as Id<"tasks">,
+            [savedTask as Id<"tasks">],
             scheduleDate,
             startTime,
             endTime,
           );
         } else {
-          onSchedule(savedTask as Id<"tasks">, scheduleDate);
+          onSchedule([savedTask as Id<"tasks">], scheduleDate);
         }
       }
 
@@ -130,7 +130,7 @@ export function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-dark">
+      <DialogContent className="bg-dark max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{task ? "Edit Task" : "New Task"}</DialogTitle>
         </DialogHeader>
@@ -154,7 +154,7 @@ export function TaskDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add details..."
-              rows={3}
+              className="min-h-[80px] resize-y"
             />
           </div>
 

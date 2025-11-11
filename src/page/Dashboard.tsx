@@ -41,6 +41,7 @@ export default function Dashboard() {
   const deleteTask = useMutation(api.tasks.remove);
   const completeTask = useMutation(api.tasks.complete);
   const createDailyTask = useMutation(api.dailyTasks.create);
+  const createManyDailyTasks = useMutation(api.dailyTasks.createMany);
   const updateDailyTask = useMutation(api.dailyTasks.update);
   const removeDailyTask = useMutation(api.dailyTasks.remove);
   const toggleDailyTaskComplete = useMutation(api.dailyTasks.toggleComplete);
@@ -212,18 +213,29 @@ export default function Dashboard() {
   };
 
   const handleScheduleTask = async (
-    taskId: Id<"tasks">,
+    taskIds: Id<"tasks">[],
     date: string,
     startTime?: string,
     endTime?: string,
   ) => {
-    await createDailyTask({
-      taskId,
-      date,
-      startTime,
-      endTime,
-      completed: false,
-    });
+    // Use createMany for multiple tasks, or create for single task
+    if (taskIds.length > 1) {
+      await createManyDailyTasks({
+        taskIds,
+        date,
+        startTime,
+        endTime,
+        completed: false,
+      });
+    } else if (taskIds.length === 1) {
+      await createDailyTask({
+        taskId: taskIds[0],
+        date,
+        startTime,
+        endTime,
+        completed: false,
+      });
+    }
     setSchedulingTask(undefined);
   };
 
@@ -337,6 +349,10 @@ export default function Dashboard() {
             onUpdateTaskStatus={(id, status) =>
               void handleUpdateTaskStatus(id, status)
             }
+            onEditTask={(task) => {
+              setEditingTask(task);
+              setTaskDialogOpen(true);
+            }}
           />
         ) : selectedView === "stats" ? (
           <StatsPage />
@@ -459,6 +475,7 @@ export default function Dashboard() {
         open={scheduleDialogOpen}
         onOpenChange={setScheduleDialogOpen}
         tasks={tasks}
+        projects={projects}
         selectedTask={schedulingTask}
         onSave={handleScheduleTask}
       />
