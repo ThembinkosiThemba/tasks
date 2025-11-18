@@ -3,15 +3,18 @@ import { twMerge } from "tailwind-merge";
 import { Streamdown } from "streamdown";
 import { Task } from "@/types";
 import { Check, CheckCircle2, Circle, Clock } from "lucide-react";
+import type { BundledTheme } from "shiki";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const themes = ["github-light", "github-dark"] as [BundledTheme, BundledTheme];
+
 export const MarkdownRender = (content: string) => {
   return (
     <div>
-      <Streamdown>{content}</Streamdown>
+      <Streamdown shikiTheme={themes}>{content}</Streamdown>
     </div>
   );
 };

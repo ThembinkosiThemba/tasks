@@ -549,7 +549,7 @@ export function MeetingNotes({
   if (showEditor) {
     return (
       <div className="flex-1 overflow-auto bg-gradient-to-b from-dark via-dark to-dark/95">
-        <div className="max-w-[850px] mx-auto flex flex-col">
+        <div className="max-w-[1100px] mx-auto flex flex-col">
           {/* Minimal Header */}
           <div className="flex items-center justify-between gap-4 px-6 py-3 border-b border-border/30 sticky top-0 bg-dark/80 backdrop-blur-md z-10">
             <Button
@@ -602,7 +602,7 @@ export function MeetingNotes({
           </div>
 
           {/* Editor/Viewer Area */}
-          <div className="flex-1 px-8 md:px-16 py-10 space-y-5 overflow-auto">
+          <div className="px-8 md:px-16 py-10 space-y-5">
             {isEditMode ? (
               <>
                 <input
@@ -622,7 +622,7 @@ export function MeetingNotes({
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Start writing your thoughts... You can use **bold**, *italic*, lists, and more."
                   className="w-full resize-none bg-transparent border-none outline-none focus:outline-none text-base md:text-lg leading-relaxed text-foreground/90 placeholder:text-muted-foreground/30 font-normal"
-                  style={{ minHeight: "calc(100vh - 280px)" }}
+                  rows={Math.max(20, content.split('\n').length + 5)}
                 />
               </>
             ) : (

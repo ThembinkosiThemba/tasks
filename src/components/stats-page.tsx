@@ -44,6 +44,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
+import { PerfectCompletionCalendar } from "@/components/perfect-completion-calendar";
 
 const COLORS = {
   primary: "hsl(var(--primary))",
@@ -447,6 +448,9 @@ export function StatsPage() {
             </div>
           </Card>
         )}
+
+        {/* Perfect Completion Calendar */}
+        <PerfectCompletionCalendar />
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

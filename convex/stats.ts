@@ -776,3 +776,65 @@ export const getMostActivePeriods = query({
     };
   },
 });
+
+/**
+ * Get days where all tasks created were also completed on the same day
+ * Returns dates that should be starred on the calendar
+ */
+export const getPerfectCompletionDays = query({
+  args: {},
+  returns: v.array(v.string()), // Array of date strings (YYYY-MM-DD)
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const tasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    // Group tasks by creation date
+    const tasksByCreationDate: Record<
+      string,
+      { created: any[]; completedSameDay: number }
+    > = {};
+
+    tasks.forEach((t) => {
+      const createdDate = new Date(t._creationTime).toISOString().split("T")[0];
+
+      if (!tasksByCreationDate[createdDate]) {
+        tasksByCreationDate[createdDate] = {
+          created: [],
+          completedSameDay: 0,
+        };
+      }
+
+      tasksByCreationDate[createdDate].created.push(t);
+
+      // Check if completed on the same day
+      if (t.completedAt) {
+        const completedDate = new Date(t.completedAt)
+          .toISOString()
+          .split("T")[0];
+        if (completedDate === createdDate) {
+          tasksByCreationDate[createdDate].completedSameDay++;
+        }
+      }
+    });
+
+    // Find dates where ALL created tasks were completed on the same day
+    const perfectDays: string[] = [];
+    Object.entries(tasksByCreationDate).forEach(([date, data]) => {
+      if (
+        data.created.length > 0 &&
+        data.completedSameDay === data.created.length
+      ) {
+        perfectDays.push(date);
+      }
+    });
+
+    return perfectDays;
+  },
+});
